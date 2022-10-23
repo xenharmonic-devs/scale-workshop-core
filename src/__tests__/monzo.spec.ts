@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {Fraction, valueToCents} from 'xen-dev-utils';
 
-import ExtendedMonzo from '../monzo';
+import {ExtendedMonzo} from '../monzo';
 
 describe('Extended Monzo', () => {
   it('can be constructed from an integer', () => {
@@ -49,10 +49,19 @@ describe('Extended Monzo', () => {
     const result = ExtendedMonzo.fromEqualTemperament(
       fifthOfTwelveEdo,
       octave,
-      1
+      2
     );
-    expect(result.vector.length).toBe(1);
+    expect(result.vector.length).toBe(2);
     expect(result.vector[0].equals(new Fraction(7, 12))).toBeTruthy();
+    expect(result.vector[1].equals(0)).toBeTruthy();
+    expect(result.residual.equals(1)).toBeTruthy();
+    expect(result.cents).toBe(0);
+  });
+  it('can be constructed from n of edo without default octave', () => {
+    const flatFifth = new Fraction(13, 23);
+    const result = ExtendedMonzo.fromEqualTemperament(flatFifth);
+    expect(result.vector.length).toBe(1);
+    expect(result.vector[0].equals(new Fraction(13, 23))).toBeTruthy();
     expect(result.residual.equals(1)).toBeTruthy();
     expect(result.cents).toBe(0);
   });

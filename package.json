@@ -1,0 +1,45 @@
+{
+  "name": "scale-workshop-core",
+  "author": "Lumi Pakkanen",
+  "version": "0.0.0",
+  "description": "Core library for creating microtonal scales without the Vue front-end",
+  "license": "MIT",
+  "main": "dist/index",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xenharmonic-devs/scale-workshop-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/xenharmonic-devs/scale-workshop-core/issues"
+  },
+  "homepage": "https://github.com/xenharmonic-devs/scale-workshop-core#readme",
+  "keywords": [
+    "Microtonal",
+    "Music",
+    "Xenharmonic",
+    "Scales"
+  ],
+  "files": [
+    "dist"
+  ],
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@types/node": "^14.11.2",
+    "gts": "^3.1.1",
+    "typescript": "^4.8.4",
+    "vitest": "^0.24.3"
+  },
+  "scripts": {
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "xen-dev-utils": "github:xenharmonic-devs/xen-dev-utils#v0.1.0"
+  }
+}

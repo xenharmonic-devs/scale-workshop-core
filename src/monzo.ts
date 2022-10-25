@@ -3,14 +3,21 @@ import {
   Fraction,
   gcd,
   lcm,
+  primeLimit,
   PRIMES,
   PRIME_CENTS,
   valueToCents,
 } from 'xen-dev-utils';
 
-type Monzo = Fraction[];
+export type FractionalMonzo = Fraction[];
 
-function monzosEqual(a: Monzo, b: Monzo) {
+/**
+ * Check if two fractional monzos are equal.
+ * @param a The first monzo.
+ * @param b The second monzo.
+ * @returns `true` if the two values are equal.
+ */
+function monzosEqual(a: FractionalMonzo, b: FractionalMonzo) {
   if (a === b) {
     return true;
   }
@@ -25,14 +32,21 @@ function monzosEqual(a: Monzo, b: Monzo) {
   return true;
 }
 
+/**
+ * Extract the exponents of the prime factors of an integer.
+ * @param n Integer to convert to a monzo.
+ * @param numberOfComponents Number of components in the result.
+ * @returns The monzo representing `n` and a multiplicative residue that cannot be represented in the given limit.
+ */
+// TODO: Use multiplicative probes instead of division
 function numberToMonzoAndResidual(
   n: number,
   numberOfComponents: number
-): [Monzo, Fraction] {
+): [FractionalMonzo, Fraction] {
   if (n < 1 || n !== Math.round(n)) {
     throw new Error('Can only convert positive integers to monzos');
   }
-  const result: Monzo = [];
+  const result: FractionalMonzo = [];
   for (let i = 0; i < numberOfComponents; ++i) {
     let component = 0;
     while (n % PRIMES[i] === 0) {
@@ -44,10 +58,17 @@ function numberToMonzoAndResidual(
   return [result, new Fraction(n)];
 }
 
+/**
+ * Extract the exponents of the prime factors of a rational number.
+ * @param fraction Rational number to convert to a monzo.
+ * @param numberOfComponents Number of components in the result.
+ * @returns The monzo representing `n` and a multiplicative residue that cannot be represented in the given limit.
+ */
+// TODO: Use multiplicative probes instead of division
 function fractionToMonzoAndResidual(
   fraction: Fraction,
   numberOfComponents: number
-): [Monzo, Fraction] {
+): [FractionalMonzo, Fraction] {
   let numerator = fraction.n;
   let denominator = fraction.d;
 
@@ -55,7 +76,7 @@ function fractionToMonzoAndResidual(
     throw new Error('Can only convert non-zero fractions to monzos');
   }
 
-  const result: Monzo = [];
+  const result: FractionalMonzo = [];
   for (let i = 0; i < numberOfComponents; ++i) {
     let component = 0;
     while (numerator % PRIMES[i] === 0) {
@@ -77,12 +98,23 @@ function fractionToMonzoAndResidual(
   return [result, residual];
 }
 
-export default class ExtendedMonzo {
-  vector: Monzo;
+/**
+ * Fractional monzo with multiplicative residue and arbitrary cents offset.
+ *
+ * Used to represent musical intervals like 5/3, 7\12 (N-of-EDO) or arbitrary intervals measured in cents.
+ */
+export class ExtendedMonzo {
+  vector: FractionalMonzo;
   residual: Fraction;
   cents: number;
 
-  constructor(vector: Monzo, residual?: Fraction, cents = 0) {
+  /**
+   * Construct a fractional monzo with multiplicative residue and arbitrary cents offset.
+   * @param vector Fractional monzo part.
+   * @param residual Multiplicative residue that is too complex to fit in the vector part.
+   * @param cents Cents offset.
+   */
+  constructor(vector: FractionalMonzo, residual?: Fraction, cents = 0) {
     if (isNaN(cents)) {
       throw new Error('Invalid cents value');
     }
@@ -94,11 +126,13 @@ export default class ExtendedMonzo {
     this.cents = cents;
   }
 
+  // TODO: Combine with fromFraction
   static fromNumber(n: number, numberOfComponents: number) {
     const [vector, residual] = numberToMonzoAndResidual(n, numberOfComponents);
     return new ExtendedMonzo(vector, residual);
   }
 
+  // TODO: Create from FractionValue
   static fromFraction(fraction: Fraction, numberOfComponents: number) {
     const [vector, residual] = fractionToMonzoAndResidual(
       fraction,
@@ -107,19 +141,38 @@ export default class ExtendedMonzo {
     return new ExtendedMonzo(vector, residual);
   }
 
+  /**
+   * Construct an extended monzo from an interval measured in cents.
+   * @param cents The amount of cents to convert. An octave (2/1) divided into 12 semitones 100 cents each.
+   * @param numberOfComponents Number of components in the monzo vector part.
+   * @returns Extended monzo with a zero vector part and the specified cents offset.
+   */
   static fromCents(cents: number, numberOfComponents: number) {
-    const vector: Monzo = [];
+    const vector: FractionalMonzo = [];
     while (vector.length < numberOfComponents) {
       vector.push(new Fraction(0));
     }
     return new ExtendedMonzo(vector, undefined, cents);
   }
 
+  /**
+   * Construct an extended monzo from a pitch-space fraction of a frequency-space fraction.
+   * @param fractionOfEquave Fraction of the equave measured in pitch-space.
+   * @param equave Equave measured in frequency-space. Defaults to the octave (2/1).
+   * @param numberOfComponents Number of components in the monzo vector part.
+   * @returns Extended monzo representing N-of-EDO (default) or a general EDJI interval.
+   */
   static fromEqualTemperament(
     fractionOfEquave: Fraction,
-    equave: Fraction,
-    numberOfComponents: number
+    equave?: Fraction,
+    numberOfComponents?: number
   ) {
+    if (equave === undefined) {
+      equave = new Fraction(2);
+    }
+    if (numberOfComponents === undefined) {
+      numberOfComponents = PRIMES.indexOf(primeLimit(equave)) + 1;
+    }
     const [equaveVector, residual] = fractionToMonzoAndResidual(
       equave,
       numberOfComponents
@@ -133,26 +186,44 @@ export default class ExtendedMonzo {
     return new ExtendedMonzo(vector);
   }
 
+  /**
+   * Constuct an extended monzo from a value measured in frequency-space.
+   * @param value Musical ratio in frequency-space.
+   * @param numberOfComponents Number of components in the monzo vector part.
+   * @returns Extended monzo with a zero vector part and the specified value converted to a cents offset.
+   */
   static fromValue(value: number, numberOfComponents: number) {
-    const vector: Monzo = [];
+    const vector: FractionalMonzo = [];
     while (vector.length < numberOfComponents) {
       vector.push(new Fraction(0));
     }
     return new ExtendedMonzo(vector, undefined, valueToCents(value));
   }
 
+  /**
+   * Number of components in the monzo vector part.
+   */
   get numberOfComponents() {
     return this.vector.length;
   }
 
+  /**
+   * Create a deep copy of this extended monzo.
+   * @returns A clone with independent vector part.
+   */
   clone() {
-    const vector: Monzo = [];
+    const vector: FractionalMonzo = [];
     this.vector.forEach(component => {
       vector.push(new Fraction(component));
     });
     return new ExtendedMonzo(vector, new Fraction(this.residual), this.cents);
   }
 
+  /**
+   * Convert the extended monzo to a fraction in frequency-space.
+   * @returns Musical ratio as a fraction in frequency-space.
+   * @throws An error if the extended monzo cannot be represented as a ratio.
+   */
   toFraction() {
     if (this.cents !== 0) {
       throw new Error('Unable to convert irrational number to fraction');
@@ -168,10 +239,19 @@ export default class ExtendedMonzo {
     return result;
   }
 
+  /**
+   * Convert the extended monzo to cents.
+   * @returns Size of the extended monzo in cents.
+   */
   toCents() {
     return this.totalCents();
   }
 
+  /**
+   * Convert the extended monzo to pitch-space fraction of a frequency-space fraction.
+   * @returns Pair of the pitch-space fraction and the equave as a frequency-space fraction.
+   * @throws An error if the extended monzo cannot be represented as an EDJI interval.
+   */
   toEqualTemperament(): [Fraction, Fraction] {
     if (this.cents !== 0) {
       throw new Error(
@@ -208,6 +288,11 @@ export default class ExtendedMonzo {
     return [fractionOfEquave, equave];
   }
 
+  /**
+   * Convert the extended monzo to a simple monzo with integer coefficients.
+   * @returns Array of prime exponents.
+   * @throws An error if the extended monzo cannot be represented as sufficiently simple ratio in frequency-space.
+   */
   toIntegerMonzo(): number[] {
     if (!this.residual.equals(1)) {
       throw new Error('Cannot convert monzo with residual to integers');
@@ -225,6 +310,10 @@ export default class ExtendedMonzo {
     return result;
   }
 
+  /**
+   * Check if the extended monzo represents a musical fraction.
+   * @returns `true` if the extended monzo can be interpreted as a ratio in frequency-space.
+   */
   isFractional() {
     if (this.cents !== 0) {
       return false;
@@ -237,6 +326,10 @@ export default class ExtendedMonzo {
     return true;
   }
 
+  /**
+   * Check if the extended monzo represents a general EDJI interval.
+   * @returns `true` if the extended monzo can be interpreted as pitch-space fraction of a frequency-space fraction.
+   */
   isEqualTemperament() {
     if (this.cents !== 0) {
       return false;
@@ -247,6 +340,10 @@ export default class ExtendedMonzo {
     return true;
   }
 
+  /**
+   * Check if the extended monzo is pure cents.
+   * @returns `true` if the extended monzo has no vector or residual.
+   */
   isCents() {
     for (let i = 0; i < this.numberOfComponents; ++i) {
       if (!this.vector[i].equals(0)) {
@@ -259,6 +356,10 @@ export default class ExtendedMonzo {
     return true;
   }
 
+  /**
+   * Check if the extended monzo is combination of fractional, equal temperament or cents parts.
+   * @returns `true` if the extended monzo is not simply fractional, equal temperament or pure cents.
+   */
   isComposite() {
     if (this.isFractional()) {
       return false;
@@ -272,6 +373,11 @@ export default class ExtendedMonzo {
     return true;
   }
 
+  /**
+   * Check if the extended monzo is a power of two in frequency space.
+   * @returns `true` if the extended monzo is a power of two.
+   */
+  // TODO: Deal with empty vector part correctly.
   isPowerOfTwo() {
     if (this.cents !== 0) {
       return false;
@@ -290,12 +396,22 @@ export default class ExtendedMonzo {
     return true;
   }
 
+  /**
+   * Return a pitch-space negative of the extended monzo.
+   * @returns The frequency-space inverse of the extended monzo.
+   */
   neg() {
     const vector = this.vector.map(component => component.neg());
     const residual = this.residual.inverse();
     return new ExtendedMonzo(vector, residual, -this.cents);
   }
 
+  /**
+   * Combine the extended monzo with another in pitch-space.
+   * @param other Another extended monzo.
+   * @returns The product of the extended monzos in frequency-space.
+   */
+  // TODO: Extend the vector part as needed.
   add(other: ExtendedMonzo) {
     if (this.vector.length !== other.vector.length) {
       throw new Error('Monzos of different length cannot be combined');
@@ -307,6 +423,12 @@ export default class ExtendedMonzo {
     return new ExtendedMonzo(vector, residual, this.cents + other.cents);
   }
 
+  /**
+   * Subtract another extended monzo from this one in pitch-space.
+   * @param other Another extended monzo.
+   * @returns This monzo divided by the other monzo in frequency-space.
+   */
+  // TODO: Extend the vector part as needed.
   sub(other: ExtendedMonzo) {
     if (this.vector.length !== other.vector.length) {
       throw new Error('Monzos of different length cannot be combined');
@@ -318,6 +440,11 @@ export default class ExtendedMonzo {
     return new ExtendedMonzo(vector, residual, this.cents - other.cents);
   }
 
+  /**
+   * Rescale the extended monzo in pitch-space.
+   * @param scalar Scaling factor.
+   * @returns The rescaled extended monzo.
+   */
   mul(scalar: number | Fraction): ExtendedMonzo {
     if (typeof scalar === 'number') {
       scalar = new Fraction(scalar);
@@ -333,6 +460,11 @@ export default class ExtendedMonzo {
     return new ExtendedMonzo(vector, residual, cents);
   }
 
+  /**
+   * Inverse rescale the extended monzo in pitch-space.
+   * @param scalar Inverse scaling factor.
+   * @returns The rescaled extended monzo.
+   */
   div(scalar: number | Fraction): ExtendedMonzo {
     if (typeof scalar === 'number') {
       scalar = new Fraction(scalar);
@@ -351,11 +483,20 @@ export default class ExtendedMonzo {
   }
 
   // Same as mul, but the offset is accumulated in cents
+  /**
+   * Rescale the extended monzo in pitch-space and store the offset as cents.
+   * @param scalar Scaling factor.
+   * @returns The rescaled extended monzo where only the cents offset differs from the original.
+   */
   stretch(scalar: number): ExtendedMonzo {
     const offset = this.totalCents() * (scalar - 1);
     return new ExtendedMonzo(this.vector, this.residual, this.cents + offset);
   }
 
+  /**
+   * Pitch-space absolute value of the extended monzo.
+   * @returns The extended monzo unchanged or negated if negative originally.
+   */
   abs() {
     if (this.totalCents() < 0) {
       return this.neg();
@@ -364,12 +505,22 @@ export default class ExtendedMonzo {
   }
 
   // Consistent with Fraction.js
+  /**
+   * Calculate truncated modulus with respect to another extended monzo.
+   * @param other Another extended monzo.
+   * @returns This modulo the other truncated towards zero cents.
+   */
   mod(other: ExtendedMonzo) {
     const truncDiv = Math.trunc(this.totalCents() / other.totalCents());
     return this.sub(other.mul(truncDiv));
   }
 
   // Consistent with Mathematics
+  /**
+   * Calculate modulus with respect to another extended monzo.
+   * @param other Another extended monzo.
+   * @returns This modulo the other.
+   */
   mmod(other: ExtendedMonzo) {
     const otherCents = other.totalCents();
     if (otherCents === 0) {
@@ -379,6 +530,11 @@ export default class ExtendedMonzo {
     return this.sub(other.mul(floorDiv));
   }
 
+  /**
+   * Check for strict equality between this and another extended monzo.
+   * @param other Another extended monzo.
+   * @returns `true` if the extended monzos share the same vector, residua and cents offset.
+   */
   strictEquals(other: ExtendedMonzo) {
     return (
       monzosEqual(this.vector, other.vector) &&
@@ -387,6 +543,10 @@ export default class ExtendedMonzo {
     );
   }
 
+  /**
+   * Convert the extended monzo to cents.
+   * @returns Size of the extended monzo in cents.
+   */
   totalCents() {
     let total = this.cents + valueToCents(this.residual.valueOf());
     this.vector.forEach(
@@ -395,10 +555,18 @@ export default class ExtendedMonzo {
     return total;
   }
 
+  /**
+   * Convert the extended monzo to frequency-space ratio.
+   * @returns The frequency-space multiplier corresponding to this extended monzo.
+   */
   valueOf() {
     return centsToValue(this.totalCents());
   }
 
+  /**
+   * Gets an array of the extended monzo representing a continued fraction. The first element always contains the whole part.
+   * @returns Array of continued fraction coefficients.
+   */
   toContinued() {
     if (this.isFractional()) {
       return this.toFraction().toContinued();
@@ -406,14 +574,29 @@ export default class ExtendedMonzo {
     return new Fraction(this.valueOf()).toContinued();
   }
 
+  /**
+   * Check if this extended monzo has the same size as another.
+   * @param other Another extended monzo.
+   * @returns `true` if the extended monzos are of equal size.
+   */
   equals(other: ExtendedMonzo) {
     return this.totalCents() === other.totalCents();
   }
 
+  /**
+   * Compare this extended monzo with another.
+   * @param other Another extended monzo.
+   * @returns Result < 0 if other is larger than this. Result > 0 if other is smaller than this. Result == 0 if other is equal to this in size.
+   */
   compare(other: ExtendedMonzo) {
     return this.totalCents() - other.totalCents();
   }
 
+  /**
+   * Find the closest approximation of the extended monzo in a harmonic series.
+   * @param denominator Denominator of the harmonic series.
+   * @returns The closest approximant in the series.
+   */
   approximateHarmonic(denominator: number) {
     const numerator = Math.round(this.valueOf() * denominator);
     return ExtendedMonzo.fromFraction(
@@ -422,6 +605,11 @@ export default class ExtendedMonzo {
     );
   }
 
+  /**
+   * Find the closest approximation of the extended monzo in a subharmonic series.
+   * @param numerator Numerator of the subharmonic series.
+   * @returns The closest approximant in the series.
+   */
   approximateSubharmonic(numerator: number) {
     const denominator = Math.round(numerator / this.valueOf());
     return ExtendedMonzo.fromFraction(
@@ -430,11 +618,21 @@ export default class ExtendedMonzo {
     );
   }
 
-  approximateSimple(eps: number) {
+  /**
+   * Simplify the extended monzo under the given threshold
+   * @param eps Error threshold, default = 0.001
+   * @returns Simple approximant of the extended monzo.
+   */
+  approximateSimple(eps?: number) {
     const fraction = new Fraction(this.valueOf()).simplify(eps);
     return ExtendedMonzo.fromFraction(fraction, this.numberOfComponents);
   }
 
+  /**
+   * Obtain a convergent of this extended monzo.
+   * @param depth How many continued fraction coefficients to use after the whole part.
+   * @returns Approximant of the extended monzo.
+   */
   getConvergent(depth: number) {
     const continuedFraction = this.toContinued().slice(0, depth + 1);
     let result = new Fraction(continuedFraction[continuedFraction.length - 1]);

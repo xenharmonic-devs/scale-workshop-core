@@ -278,7 +278,7 @@ export class Interval {
   }
 
   /**
-   * Merge formatting options with another.
+   * Merge existing formatting options with new ones.
    * @param options New options. Takes priority over existing keys.
    * @returns The interval with the new formatting options.
    */

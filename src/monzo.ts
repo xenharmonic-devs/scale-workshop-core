@@ -107,7 +107,7 @@ export class ExtendedMonzo {
    * @param fractionOfEquave Fraction of the equave measured in pitch-space.
    * @param equave Equave measured in frequency-space. Defaults to the octave (2/1).
    * @param numberOfComponents Number of components in the monzo vector part.
-   * @returns Extended monzo representing N-of-EDO (default) or a general EDJI interval.
+   * @returns Extended monzo representing N-of-EDO (default) or a generic EDJI interval.
    */
   static fromEqualTemperament(
     fractionOfEquave: Fraction,
@@ -274,7 +274,7 @@ export class ExtendedMonzo {
   }
 
   /**
-   * Check if the extended monzo represents a general EDJI interval.
+   * Check if the extended monzo represents a generic EDJI interval.
    * @returns `true` if the extended monzo can be interpreted as pitch-space fraction of a frequency-space fraction.
    */
   isEqualTemperament() {

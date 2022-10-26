@@ -5,7 +5,7 @@ import {ExtendedMonzo} from '../monzo';
 
 describe('Extended Monzo', () => {
   it('can be constructed from an integer', () => {
-    const result = ExtendedMonzo.fromNumber(75, 3);
+    const result = ExtendedMonzo.fromFraction(75, 3);
     expect(result.vector.length).toBe(3);
     expect(result.vector[0].equals(0)).toBeTruthy();
     expect(result.vector[1].equals(1)).toBeTruthy();
@@ -14,7 +14,7 @@ describe('Extended Monzo', () => {
     expect(result.cents).toBe(0);
   });
   it('can be constructed from an integer with residual', () => {
-    const result = ExtendedMonzo.fromNumber(75, 2);
+    const result = ExtendedMonzo.fromFraction(75, 2);
     expect(result.vector.length).toBe(2);
     expect(result.vector[0].equals(0)).toBeTruthy();
     expect(result.vector[1].equals(1)).toBeTruthy();
@@ -97,9 +97,9 @@ describe('Extended Monzo', () => {
     const a = 15;
     const b = 123457;
 
-    const aMonzo = ExtendedMonzo.fromNumber(a, 3);
-    const bMonzo = ExtendedMonzo.fromNumber(b, 3);
-    const aTimesBMonzo = ExtendedMonzo.fromNumber(a * b, 3);
+    const aMonzo = ExtendedMonzo.fromFraction(a, 3);
+    const bMonzo = ExtendedMonzo.fromFraction(b, 3);
+    const aTimesBMonzo = ExtendedMonzo.fromFraction(a * b, 3);
 
     expect(aMonzo.add(bMonzo).strictEquals(aTimesBMonzo)).toBeTruthy();
   });
@@ -135,8 +135,8 @@ describe('Extended Monzo', () => {
     const a = 15;
     const b = 5;
 
-    const aMonzo = ExtendedMonzo.fromNumber(a, 2);
-    const aToThePowerOfBMonzo = ExtendedMonzo.fromNumber(a ** b, 2);
+    const aMonzo = ExtendedMonzo.fromFraction(a, 2);
+    const aToThePowerOfBMonzo = ExtendedMonzo.fromFraction(a ** b, 2);
 
     expect(aMonzo.mul(b).strictEquals(aToThePowerOfBMonzo)).toBeTruthy();
   });
@@ -144,7 +144,7 @@ describe('Extended Monzo', () => {
     const a = 6;
     const b = new Fraction(1, 2);
 
-    const result = ExtendedMonzo.fromNumber(a, 1).mul(b);
+    const result = ExtendedMonzo.fromFraction(a, 1).mul(b);
 
     expect(result.vector.length).toBe(1);
     expect(result.vector[0].equals(new Fraction(1, 2))).toBeTruthy();
@@ -155,8 +155,8 @@ describe('Extended Monzo', () => {
     const a = 9;
     const b = 2;
 
-    const aMonzo = ExtendedMonzo.fromNumber(a, 2);
-    const squareRootofAMonzo = ExtendedMonzo.fromNumber(a ** (1 / b), 2);
+    const aMonzo = ExtendedMonzo.fromFraction(a, 2);
+    const squareRootofAMonzo = ExtendedMonzo.fromFraction(a ** (1 / b), 2);
 
     expect(aMonzo.div(b).strictEquals(squareRootofAMonzo)).toBeTruthy();
   });
@@ -249,7 +249,7 @@ describe('Extended Monzo', () => {
   });
 
   it('can represent huge numbers', () => {
-    const result = ExtendedMonzo.fromNumber(4522822787109375, 4);
+    const result = ExtendedMonzo.fromFraction(4522822787109375, 4);
     // Check that each prime exponent is less than 10.
     result.vector.forEach(component => {
       expect(component.compare(10)).toBeLessThan(0);
@@ -275,10 +275,24 @@ describe('Extended Monzo', () => {
   });
 
   it('throws for zero (number)', () => {
-    expect(() => ExtendedMonzo.fromNumber(0, 1)).toThrow();
+    expect(() => ExtendedMonzo.fromFraction(0, 1)).toThrow();
   });
 
   it('throws for zero (fraction)', () => {
     expect(() => ExtendedMonzo.fromFraction(new Fraction(0), 1)).toThrow();
+  });
+
+  it('can be tested for being a power of two (residual)', () => {
+    const eight = ExtendedMonzo.fromFraction(8, 0);
+    expect(eight.isPowerOfTwo()).toBeTruthy();
+    const six = ExtendedMonzo.fromFraction(6, 0);
+    expect(six.isPowerOfTwo()).toBeFalsy();
+  });
+
+  it('can be tested for being a power of two (vector)', () => {
+    const eight = ExtendedMonzo.fromFraction(8, 2);
+    expect(eight.isPowerOfTwo()).toBeTruthy();
+    const six = ExtendedMonzo.fromFraction(6, 2);
+    expect(six.isPowerOfTwo()).toBeFalsy();
   });
 });

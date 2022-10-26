@@ -1,11 +1,13 @@
 import {
   centsToValue,
   Fraction,
+  FractionValue,
   gcd,
   lcm,
   primeLimit,
   PRIMES,
   PRIME_CENTS,
+  toMonzoAndResidual,
   valueToCents,
 } from 'xen-dev-utils';
 
@@ -33,69 +35,15 @@ function monzosEqual(a: FractionalMonzo, b: FractionalMonzo) {
 }
 
 /**
- * Extract the exponents of the prime factors of an integer.
- * @param n Integer to convert to a monzo.
- * @param numberOfComponents Number of components in the result.
- * @returns The monzo representing `n` and a multiplicative residue that cannot be represented in the given limit.
+ * Check if a number is a power of two.
+ * @param n Real number to check.
+ * @returns `true` if `n` is a power of two.
  */
-// TODO: Use multiplicative probes instead of division
-function numberToMonzoAndResidual(
-  n: number,
-  numberOfComponents: number
-): [FractionalMonzo, Fraction] {
-  if (n < 1 || n !== Math.round(n)) {
-    throw new Error('Can only convert positive integers to monzos');
+function isPowerOfTwo(n: number) {
+  if (n >= 1 && n < 0x100000000) {
+    return n && !(n & (n - 1));
   }
-  const result: FractionalMonzo = [];
-  for (let i = 0; i < numberOfComponents; ++i) {
-    let component = 0;
-    while (n % PRIMES[i] === 0) {
-      n /= PRIMES[i];
-      component++;
-    }
-    result.push(new Fraction(component));
-  }
-  return [result, new Fraction(n)];
-}
-
-/**
- * Extract the exponents of the prime factors of a rational number.
- * @param fraction Rational number to convert to a monzo.
- * @param numberOfComponents Number of components in the result.
- * @returns The monzo representing `n` and a multiplicative residue that cannot be represented in the given limit.
- */
-// TODO: Use multiplicative probes instead of division
-function fractionToMonzoAndResidual(
-  fraction: Fraction,
-  numberOfComponents: number
-): [FractionalMonzo, Fraction] {
-  let numerator = fraction.n;
-  let denominator = fraction.d;
-
-  if (numerator < 1) {
-    throw new Error('Can only convert non-zero fractions to monzos');
-  }
-
-  const result: FractionalMonzo = [];
-  for (let i = 0; i < numberOfComponents; ++i) {
-    let component = 0;
-    while (numerator % PRIMES[i] === 0) {
-      numerator /= PRIMES[i];
-      component++;
-    }
-    while (denominator % PRIMES[i] === 0) {
-      denominator /= PRIMES[i];
-      component--;
-    }
-    result.push(new Fraction(component));
-  }
-
-  const residual = new Fraction({
-    s: fraction.s,
-    n: numerator,
-    d: denominator,
-  });
-  return [result, residual];
+  return Math.log2(n) % 1 === 0;
 }
 
 /**
@@ -126,19 +74,18 @@ export class ExtendedMonzo {
     this.cents = cents;
   }
 
-  // TODO: Combine with fromFraction
-  static fromNumber(n: number, numberOfComponents: number) {
-    const [vector, residual] = numberToMonzoAndResidual(n, numberOfComponents);
-    return new ExtendedMonzo(vector, residual);
-  }
-
-  // TODO: Create from FractionValue
-  static fromFraction(fraction: Fraction, numberOfComponents: number) {
-    const [vector, residual] = fractionToMonzoAndResidual(
-      fraction,
-      numberOfComponents
+  /**
+   * Construct an extended monzo from a rational number.
+   * @param fraction Rational number to convert.
+   * @param numberOfComponents Number of components in the monzo vector part.
+   * @returns Extended monzo representing the just intonation interval.
+   */
+  static fromFraction(fraction: FractionValue, numberOfComponents: number) {
+    const [vector, residual] = toMonzoAndResidual(fraction, numberOfComponents);
+    return new ExtendedMonzo(
+      vector.map(c => new Fraction(c)),
+      residual
     );
-    return new ExtendedMonzo(vector, residual);
   }
 
   /**
@@ -173,7 +120,7 @@ export class ExtendedMonzo {
     if (numberOfComponents === undefined) {
       numberOfComponents = PRIMES.indexOf(primeLimit(equave)) + 1;
     }
-    const [equaveVector, residual] = fractionToMonzoAndResidual(
+    const [equaveVector, residual] = toMonzoAndResidual(
       equave,
       numberOfComponents
     );
@@ -181,7 +128,7 @@ export class ExtendedMonzo {
       throw new Error('Unable to convert equave to monzo');
     }
     const vector = equaveVector.map(component =>
-      component.mul(fractionOfEquave)
+      fractionOfEquave.mul(component)
     );
     return new ExtendedMonzo(vector);
   }
@@ -377,15 +324,14 @@ export class ExtendedMonzo {
    * Check if the extended monzo is a power of two in frequency space.
    * @returns `true` if the extended monzo is a power of two.
    */
-  // TODO: Deal with empty vector part correctly.
   isPowerOfTwo() {
     if (this.cents !== 0) {
       return false;
     }
-    if (!this.residual.equals(1)) {
-      return false;
-    }
     if (!this.vector.length) {
+      return isPowerOfTwo(this.residual.n) && isPowerOfTwo(this.residual.d);
+    }
+    if (!this.residual.equals(1)) {
       return false;
     }
     for (let i = 1; i < this.vector.length; ++i) {
@@ -411,14 +357,17 @@ export class ExtendedMonzo {
    * @param other Another extended monzo.
    * @returns The product of the extended monzos in frequency-space.
    */
-  // TODO: Extend the vector part as needed.
-  add(other: ExtendedMonzo) {
-    if (this.vector.length !== other.vector.length) {
-      throw new Error('Monzos of different length cannot be combined');
+  add(other: ExtendedMonzo): ExtendedMonzo {
+    if (this.vector.length < other.vector.length) {
+      return other.add(this);
     }
-    const vector = this.vector.map((component, i) =>
-      component.add(other.vector[i])
-    );
+    const vector = [];
+    for (let i = 0; i < other.vector.length; ++i) {
+      vector.push(this.vector[i].add(other.vector[i]));
+    }
+    while (vector.length < this.vector.length) {
+      vector.push(new Fraction(this.vector[vector.length]));
+    }
     const residual = this.residual.mul(other.residual);
     return new ExtendedMonzo(vector, residual, this.cents + other.cents);
   }
@@ -428,14 +377,23 @@ export class ExtendedMonzo {
    * @param other Another extended monzo.
    * @returns This monzo divided by the other monzo in frequency-space.
    */
-  // TODO: Extend the vector part as needed.
   sub(other: ExtendedMonzo) {
-    if (this.vector.length !== other.vector.length) {
-      throw new Error('Monzos of different length cannot be combined');
+    const vector = [];
+    if (this.vector.length <= other.vector.length) {
+      for (let i = 0; i < this.vector.length; ++i) {
+        vector.push(this.vector[i].sub(other.vector[i]));
+      }
+      while (vector.length < other.vector.length) {
+        vector.push(other.vector[vector.length].neg());
+      }
+    } else {
+      for (let i = 0; i < other.vector.length; ++i) {
+        vector.push(this.vector[i].sub(other.vector[i]));
+      }
+      while (vector.length < this.vector.length) {
+        vector.push(new Fraction(this.vector[vector.length]));
+      }
     }
-    const vector = this.vector.map((component, i) =>
-      component.sub(other.vector[i])
-    );
     const residual = this.residual.div(other.residual);
     return new ExtendedMonzo(vector, residual, this.cents - other.cents);
   }

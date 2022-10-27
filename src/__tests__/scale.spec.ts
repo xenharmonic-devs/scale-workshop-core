@@ -4,9 +4,7 @@ import {ExtendedMonzo} from '../monzo';
 import {Scale} from '../scale';
 import {Interval, IntervalOptions} from '../interval';
 import {arraysEqual, Fraction} from 'xen-dev-utils';
-// import { mos } from "moment-of-symmetry";
 
-// TODO: Convert tests relevant for non-destructive editing #33
 describe('Scale', () => {
   it('supports just intonation', () => {
     const intervals = [
@@ -64,6 +62,22 @@ describe('Scale', () => {
     expect(scale.getMonzo(2).toCents()).toBeCloseTo(246);
 
     expect(scale.getMonzo(-1).toCents()).toBeCloseTo(-123);
+  });
+
+  it('supports taking a frequency range', () => {
+    const intervals = [
+      new Interval(ExtendedMonzo.fromFraction('8/7', 4), 'ratio'),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament('2/5', 2, 4),
+        'equal temperament'
+      ),
+      new Interval(ExtendedMonzo.fromCents(1200, 4), 'cents'),
+    ];
+    const scale = Scale.fromIntervalArray(intervals);
+    const range = scale.getFrequencyRange(-10, 10);
+    for (let index = -10; index < 10; ++index) {
+      expect(range[index + 10]).toBe(scale.getFrequency(index));
+    }
   });
 
   it('can be sorted', () => {
@@ -179,7 +193,7 @@ describe('Scale', () => {
     ];
     const baseFrequency = 1000;
     expect(() =>
-      Scale.fromIntervalArray(intervals, baseFrequency).subset(new Set([0, 3]))
+      Scale.fromIntervalArray(intervals, baseFrequency).subset([0, 3])
     ).toThrowError('Subset index out of bounds');
   });
 
@@ -220,22 +234,41 @@ describe('Scale', () => {
     expect(scale.getFrequency(2)).toBeCloseTo(480);
     expect(scale.getFrequency(3)).toBeCloseTo(600);
   });
-  /*
-  it("can raise a degree", () => {
+  it('can raise a degree', () => {
     const octave = new Fraction(2);
     const intervals = [
-      ExtendedMonzo.fromEqualTemperament(new Fraction(2, 12), octave, 1),
-      ExtendedMonzo.fromEqualTemperament(new Fraction(3, 12), octave, 1),
-      ExtendedMonzo.fromEqualTemperament(new Fraction(5, 12), octave, 1),
-      ExtendedMonzo.fromEqualTemperament(new Fraction(7, 12), octave, 1),
-      ExtendedMonzo.fromEqualTemperament(new Fraction(8, 12), octave, 1),
-      ExtendedMonzo.fromEqualTemperament(new Fraction(10, 12), octave, 1),
-      ExtendedMonzo.fromEqualTemperament(new Fraction(12, 12), octave, 1),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(2, 12), octave, 1),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(3, 12), octave, 1),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(5, 12), octave, 1),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(7, 12), octave, 1),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(8, 12), octave, 1),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(10, 12), octave, 1),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(12, 12), octave, 1),
+        'equal temperament'
+      ),
     ];
-    const semitone = ExtendedMonzo.fromEqualTemperament(
-      new Fraction(1, 12),
-      octave,
-      1
+    const semitone = new Interval(
+      ExtendedMonzo.fromEqualTemperament(new Fraction(1, 12), octave, 1),
+      'equal temperament'
     );
     const harmonicMinor = Scale.fromIntervalArray(intervals).transposeDegree(
       6,
@@ -250,21 +283,20 @@ describe('Scale', () => {
     expect(harmonicMinor.getMonzo(6).toCents()).toBeCloseTo(1100);
     expect(harmonicMinor.getMonzo(7).toCents()).toBeCloseTo(1200);
   });
-  it("can insert new intervals", () => {
+  it('can insert new intervals', () => {
     const intervals = [
-      ExtendedMonzo.fromNumber(2, 2),
-      ExtendedMonzo.fromNumber(4, 2),
+      new Interval(ExtendedMonzo.fromFraction(2, 2), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(4, 2), 'ratio'),
     ];
     const scale = Scale.fromIntervalArray(intervals, 1).insertAfter(
       1,
-      ExtendedMonzo.fromNumber(3, 2)
+      new Interval(ExtendedMonzo.fromFraction(3, 2), 'ratio')
     );
     expect(scale.getFrequency(0)).toBeCloseTo(1);
     expect(scale.getFrequency(1)).toBeCloseTo(2);
     expect(scale.getFrequency(2)).toBeCloseTo(3);
     expect(scale.getFrequency(3)).toBeCloseTo(4);
   });
-  */
   it('can be equalized', () => {
     const intervals = [
       new Interval(ExtendedMonzo.fromFraction(new Fraction(5, 4), 3), 'ratio'),
@@ -654,10 +686,10 @@ describe('Scale', () => {
       }
     );
   });
-  /*
-  it("can generate a MOS scale", () => {
-    const octave = new Interval(ExtendedMonzo.fromFraction(2, 1), "ratio");
-    const steps = mos(3, 4, 2, 1, 3);
+
+  it('supports a MOS scale', () => {
+    const octave = new Interval(ExtendedMonzo.fromFraction(2, 1), 'ratio');
+    const steps = [1, 3, 4, 6, 7, 9, 10];
     const bish = Scale.fromEqualTemperamentSubset(steps, octave);
     expect(bish.getMonzo(0).toCents()).toBeCloseTo(0);
     expect(bish.getMonzo(1).toCents()).toBeCloseTo(120);
@@ -668,27 +700,26 @@ describe('Scale', () => {
     expect(bish.getMonzo(6).toCents()).toBeCloseTo(1080);
     expect(bish.getMonzo(7).toCents()).toBeCloseTo(1200);
   });
-  it("formats MOS scales consistently", () => {
-    const octave = new Interval(ExtendedMonzo.fromFraction(2, 1), "ratio");
-    const steps = mos(5, 2, 2, 1, 5);
+  it('formats MOS scales consistently', () => {
+    const octave = new Interval(ExtendedMonzo.fromFraction(2, 1), 'ratio');
+    const steps = [2, 4, 5, 7, 9, 11, 12];
     const major = Scale.fromEqualTemperamentSubset(steps, octave);
     const expected = [
-      "2\\12",
-      "4\\12",
-      "5\\12",
-      "7\\12",
-      "9\\12",
-      "11\\12",
-      "12\\12",
+      '2\\12',
+      '4\\12',
+      '5\\12',
+      '7\\12',
+      '9\\12',
+      '11\\12',
+      '12\\12',
     ];
     expect(arraysEqual(major.toStrings(), expected)).toBeTruthy();
   });
-  */
-  /*
-  it("can tile", () => {
-    const two = ExtendedMonzo.fromFraction(2, 3);
-    const three = ExtendedMonzo.fromFraction(3, 3);
-    const five = ExtendedMonzo.fromFraction(5, 3);
+
+  it('can tile', () => {
+    const two = new Interval(ExtendedMonzo.fromFraction(2, 3), 'ratio');
+    const three = new Interval(ExtendedMonzo.fromFraction(3, 3), 'ratio');
+    const five = new Interval(ExtendedMonzo.fromFraction(5, 3), 'ratio');
     const hexagon = Scale.fromIntervalArray([
       three,
       five,
@@ -700,12 +731,13 @@ describe('Scale', () => {
     const tiled = hexagon.merge(hexagon.transpose(three.sub(five)));
     expect(tiled.size).toBe(2 * hexagon.size - 2);
   });
-  it("can produce pretty wild scales", () => {
-    const two = ExtendedMonzo.fromFraction(2, 5);
-    const three = ExtendedMonzo.fromFraction(3, 5);
-    const five = ExtendedMonzo.fromFraction(5, 5);
-    const seven = ExtendedMonzo.fromFraction(7, 5);
-    const eleven = ExtendedMonzo.fromFraction(11, 5);
+
+  it('can produce pretty wild scales', () => {
+    const two = new Interval(ExtendedMonzo.fromFraction(2, 5), 'ratio');
+    const three = new Interval(ExtendedMonzo.fromFraction(3, 5), 'ratio');
+    const five = new Interval(ExtendedMonzo.fromFraction(5, 5), 'ratio');
+    const seven = new Interval(ExtendedMonzo.fromFraction(7, 5), 'ratio');
+    const eleven = new Interval(ExtendedMonzo.fromFraction(11, 5), 'ratio');
     const neutralDiagonal = three.add(five).add(seven).add(eleven).div(2);
     const orthoplex = Scale.fromCrossPolytope(
       [three, five, seven, eleven],
@@ -729,7 +761,6 @@ describe('Scale', () => {
       ).toBeTruthy();
     }
   });
-  */
 
   it('can be reverse parsed', () => {
     const scale = Scale.fromIntervalArray([

@@ -9,8 +9,6 @@ import {
   valueToCents,
 } from 'xen-dev-utils';
 
-// TODO: Support `Set` where applicable.
-
 /** Musical scale consisting of Interval instances repeated at octaves or generic equaves. */
 export class Scale {
   intervals: Interval[];
@@ -247,7 +245,7 @@ export class Scale {
 
   /**
    * Construct a musical scale from a combination product set.
-   * @param factors Factors in the set.
+   * @param factors Factors in the original set.
    * @param numElements Number of elements to multiply together in frequency-space in each combination.
    * @param addUnity Add 1/1 into the scale along with the combinations. If `false` the scale will be transposed to include a combination at unison.
    * @param equave Interval of equivalence.
@@ -255,12 +253,15 @@ export class Scale {
    * @returns A new combination product set reduced to fit inside the equave and sorted by size.
    */
   static fromCombinations(
-    factors: Interval[],
+    factors: Interval[] | Set<Interval>,
     numElements: number,
     addUnity: boolean,
     equave: Interval,
     baseFrequency = 440
   ) {
+    if (factors instanceof Set) {
+      factors = [...factors.values()];
+    }
     if (numElements > factors.length) {
       throw new Error(
         'Number of elements in a combination must be less than or equal to the number of factors'
@@ -333,11 +334,14 @@ export class Scale {
    * @returns A new musical in the form of a generalized octahedron in monzo space.
    */
   static fromCrossPolytope(
-    basis: Interval[],
+    basis: Interval[] | Set<Interval>,
     addUnity: boolean,
     equave: Interval,
     baseFrequency = 440
   ) {
+    if (basis instanceof Set) {
+      basis = [...basis.values()];
+    }
     let intervals: Interval[] = [];
     basis.forEach(basisInterval => {
       intervals.push(basisInterval);
@@ -364,23 +368,29 @@ export class Scale {
    * @returns A new musical scale in the form of an octaplex in monzo space.
    */
   static fromOctaplex(
-    basis: Interval[],
+    basis: Interval[] | Set<Interval>,
     addUnity: boolean,
     equave: Interval,
     baseFrequency = 440
   ) {
-    if (basis.length !== 4) {
+    let basis_: Interval[]; // Deals with typescript weirdness.
+    if (basis instanceof Set) {
+      basis_ = [...basis.values()];
+    } else {
+      basis_ = basis;
+    }
+    if (basis_.length !== 4) {
       throw new Error('Octaplex can only be generated using 4 basis vectors');
     }
     let intervals: Interval[] = [];
     [-1, 1].forEach(sign1 => {
       [-1, 1].forEach(sign2 => {
-        intervals.push(basis[0].mul(sign1).add(basis[1].mul(sign2)));
-        intervals.push(basis[0].mul(sign1).add(basis[2].mul(sign2)));
-        intervals.push(basis[0].mul(sign1).add(basis[3].mul(sign2)));
-        intervals.push(basis[1].mul(sign1).add(basis[3].mul(sign2)));
-        intervals.push(basis[2].mul(sign1).add(basis[3].mul(sign2)));
-        intervals.push(basis[1].mul(sign1).add(basis[2].mul(sign2)));
+        intervals.push(basis_[0].mul(sign1).add(basis_[1].mul(sign2)));
+        intervals.push(basis_[0].mul(sign1).add(basis_[2].mul(sign2)));
+        intervals.push(basis_[0].mul(sign1).add(basis_[3].mul(sign2)));
+        intervals.push(basis_[1].mul(sign1).add(basis_[3].mul(sign2)));
+        intervals.push(basis_[2].mul(sign1).add(basis_[3].mul(sign2)));
+        intervals.push(basis_[1].mul(sign1).add(basis_[2].mul(sign2)));
       });
     });
     if (addUnity) {
@@ -549,7 +559,30 @@ export class Scale {
     return this.baseFrequency * this.getMonzo(index).valueOf();
   }
 
-  // TODO: getFrequencyRange
+  /**
+   * Obtain a range of frequencies in the scale.
+   * More efficient to compute than getting individual frequencies.
+   * @param start The smallest index to include.
+   * @param end The end point `end` itself not included.
+   * @returns An array of frequencies corresponding to the specified range.
+   */
+  getFrequencyRange(start: number, end: number) {
+    const values = this.intervals.map(interval => interval.monzo.valueOf());
+    const equaveValue = this.equave.monzo.valueOf();
+    const numEquaves = Math.floor(start / this.size);
+    let referenceFrequency = this.baseFrequency * equaveValue ** numEquaves;
+    let index = start - numEquaves * this.size;
+    const result = [];
+    for (let i = start; i < end; ++i) {
+      result.push(referenceFrequency * values[index]);
+      index++;
+      if (index >= this.size) {
+        index -= this.size;
+        referenceFrequency *= equaveValue;
+      }
+    }
+    return result;
+  }
 
   /**
    * Obtain the name of an interval in the scale.
@@ -579,7 +612,7 @@ export class Scale {
    * @returns A new scale with new intervals.
    */
   variant(intervals: Interval[]) {
-    return new Scale(intervals, this.equave, this.baseFrequency);
+    return new Scale(intervals, this.equave.clone(), this.baseFrequency);
   }
 
   /**
@@ -587,9 +620,13 @@ export class Scale {
    * @param deep Create new copies of the intervals instead just a new array with the old instances.
    * @returns The scale with intervals sorted from smallest to largest without touching the equave.
    */
-  // TODO: Deep copy
   sorted(deep = false) {
-    const intervals = [...this.intervals];
+    let intervals: Interval[];
+    if (deep) {
+      intervals = this.intervals.map(interval => interval.clone());
+    } else {
+      intervals = [...this.intervals];
+    }
     intervals.sort((a, b) => a.compare(b));
     return this.variant(intervals);
   }
@@ -605,7 +642,6 @@ export class Scale {
     return this.variant(intervals);
   }
 
-  // TODO: Deep copy
   /**
    * Repeat the scale at the equave and replace the old equave. Produces the same frequencies as the old scale.
    * @param numRepeats Number of repeats.
@@ -620,7 +656,12 @@ export class Scale {
         this.baseFrequency
       );
     }
-    const intervals = [...this.intervals];
+    let intervals: Interval[];
+    if (deep) {
+      intervals = this.intervals.map(interval => interval.clone());
+    } else {
+      intervals = [...this.intervals];
+    }
     for (let i = 1; i < numRepeats; ++i) {
       this.intervals.forEach(interval => {
         intervals.push(interval.add(this.equave.mul(i)));
@@ -654,25 +695,24 @@ export class Scale {
     return this.variant(intervals);
   }
 
-  // TODO: Deep copy.
   /**
    * Obtain a subset of the scale.
    * @param indices Indices of the intervals to include.
    * @param deep Create new copies of the Interval instances.
    * @returns A new scale with only the specified subset included.
    */
-  subset(indices: number[] | Set<number>, deep = false) {
-    if (indices instanceof Set) {
-      indices = [...indices.values()];
-    }
+  subset(indices: number[], deep = false) {
     if (!indices.includes(0)) {
       throw new Error('Subset must include unison');
     }
-    const intervals: (Interval | undefined)[] = indices.map(
+    let intervals: (Interval | undefined)[] = indices.map(
       i => this.intervals[i]
     );
     if (intervals.includes(undefined)) {
       throw new Error('Subset index out of bounds');
+    }
+    if (deep) {
+      intervals = intervals.map(interval => interval!.clone());
     }
     return this.variant(intervals as Interval[]);
   }
@@ -700,13 +740,12 @@ export class Scale {
     );
   }
 
-  // TODO: Deep copy the first interval
   /**
    * Invert the intervals in the scale.
    * @returns A new inverted scale.
    */
   invert() {
-    const intervals = this.intervals.slice(0, 1);
+    const intervals = [this.intervals[0].clone()];
     for (let i = this.intervals.length - 1; i >= 1; --i) {
       intervals.push(this.equave.sub(this.intervals[i]));
     }
@@ -740,7 +779,6 @@ export class Scale {
     return this.variant(intervals);
   }
 
-  // TODO: deep copy
   /**
    * Create a new scale with a degree of the scale replaced by another.
    * @param degree Index of the interval to replace.
@@ -752,25 +790,45 @@ export class Scale {
     if (degree === this.intervals.length) {
       return new Scale(this.intervals, replacement, this.baseFrequency);
     }
-    const intervals = [...this.intervals];
+    let intervals: Interval[];
+    if (deep) {
+      intervals = this.intervals.map(interval => interval.clone());
+    } else {
+      intervals = [...this.intervals];
+    }
     intervals[degree] = replacement;
     return this.variant(intervals);
   }
 
-  /*
-  TODO
-  // Duplicates unison and other scale degrees.
-  concat(other: Scale) {
+  /**
+   * Create a new scale by concatenating this one with another.
+   * Duplicates unison and other scale degrees if present.
+   * @param other Another scale with the same equave and base frequency.
+   * @param deep Create new copies of the Interval instances.
+   * @returns A new scale that includes all the intervals from both scales.
+   */
+  concat(other: Scale, deep = false) {
     if (this.baseFrequency !== other.baseFrequency) {
-      throw new Error("Base frequencies must match when concatenating");
+      throw new Error('Base frequencies must match when concatenating');
     }
     if (!this.equave.strictEquals(other.equave)) {
-      throw new Error("Equaves must match when concatenating");
+      throw new Error('Equaves must match when concatenating');
     }
-    const intervals = this.intervals.concat(other.intervals);
+    let intervals: Interval[];
+    if (deep) {
+      intervals = this.intervals
+        .map(interval => interval.clone())
+        .concat(other.intervals.map(interval => interval.clone()));
+    } else {
+      intervals = this.intervals.concat(other.intervals);
+    }
     return this.variant(intervals);
   }
 
+  /**
+   * Remove duplicate intervals in-place.
+   * @returns This scale.
+   */
   removeDuplicatesInPlace() {
     let i = 1;
     while (i < this.intervals.length) {
@@ -786,24 +844,53 @@ export class Scale {
     return this;
   }
 
+  /**
+   * Merge this scale with another, removing duplicates and sorting the result.
+   * @param other Another scale.
+   * @returns A new scale with intervals from both without duplicates.
+   */
   merge(other: Scale) {
     return this.concat(other).reduce().removeDuplicatesInPlace().sortInPlace();
   }
 
-  transposeDegree(degree: number, offset: Interval) {
+  /**
+   * Create a new scale where a single degree has been transposed.
+   * @param degree Degree to transpose.
+   * @param offset Amount to transpose by.
+   * @param deep Create new copies of the Interval instances.
+   * @returns A new scale with a transposed degree.
+   */
+  transposeDegree(degree: number, offset: Interval, deep = false) {
     degree = mmod(degree, this.size);
-    const intervals = [...this.intervals];
+    let intervals: Interval[];
+    if (deep) {
+      intervals = this.intervals.map(interval => interval.clone());
+    } else {
+      intervals = [...this.intervals];
+    }
     intervals[degree] = intervals[degree].add(offset);
     return this.variant(intervals);
   }
 
-  insertAfter(degree: number, interval: Interval) {
+  /**
+   * Create a new scale with a new interval inserted.
+   * @param degree Degree to insert after.
+   * @param interval Interval to insert.
+   * @param deep Create new copies of the Interval instances.
+   * @returns A new scale with the new interval inserted.
+   */
+  insertAfter(degree: number, interval: Interval, deep = false) {
     degree = mmod(degree, this.size);
-    const intervals = [...this.intervals];
-    intervals.splice(degree + 1, 0, interval);
+    let intervals: Interval[];
+    if (deep) {
+      intervals = this.intervals.map(interval => interval.clone());
+      intervals.splice(degree + 1, 0, interval.clone());
+    } else {
+      intervals = [...this.intervals];
+      intervals.splice(degree + 1, 0, interval);
+    }
     return this.variant(intervals);
   }
-  */
 
   /**
    * Create a new scale where every interval is replace with the closest approximation in the given EDO/EDJI.

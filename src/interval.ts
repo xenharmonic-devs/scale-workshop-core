@@ -75,8 +75,16 @@ export class Interval {
   ) {
     this.monzo = monzo;
     this.type = type;
-    this.options = options || {};
+    this.options = Object.assign({}, options);
     this.name = name || this.toString();
+  }
+
+  /**
+   * Create a deep copy of this interval.
+   * @returns A clone with independent monzo vector part.
+   */
+  clone() {
+    return new Interval(this.monzo.clone(), this.type, this.name, this.options);
   }
 
   /**
@@ -213,6 +221,24 @@ export class Interval {
   }
 
   /**
+   * Check for strict equality between this and another interval.
+   * @param other Another interval.
+   * @returns `true` if the intervals share the same type, options, name, monzo vector, residual and cents offset.
+   */
+  strictEquals(other: Interval) {
+    for (const [key, value] of Object.entries(this.options)) {
+      if (other.options[key as keyof IntervalOptions] !== value) {
+        return false;
+      }
+    }
+    return (
+      this.monzo.strictEquals(other.monzo) &&
+      this.type === other.type &&
+      this.name === other.name
+    );
+  }
+
+  /**
    * Compare this interval with another.
    * @param other Another interval.
    * @returns Result < 0 if other is larger than this. Result > 0 if other is smaller than this. Result == 0 if other is equal to this in size.
@@ -278,7 +304,7 @@ export class Interval {
   }
 
   /**
-   * Merge formatting options with another.
+   * Merge existing formatting options with new ones.
    * @param options New options. Takes priority over existing keys.
    * @returns The interval with the new formatting options.
    */

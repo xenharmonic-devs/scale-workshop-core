@@ -110,10 +110,11 @@ export class ExtendedMonzo {
    * @returns Extended monzo representing N-of-EDO (default) or a generic EDJI interval.
    */
   static fromEqualTemperament(
-    fractionOfEquave: Fraction,
-    equave?: Fraction,
+    fractionOfEquave: FractionValue,
+    equave?: FractionValue,
     numberOfComponents?: number
   ) {
+    const fractionOfEquave_ = new Fraction(fractionOfEquave);
     if (equave === undefined) {
       equave = new Fraction(2);
     }
@@ -128,7 +129,7 @@ export class ExtendedMonzo {
       throw new Error('Unable to convert equave to monzo');
     }
     const vector = equaveVector.map(component =>
-      fractionOfEquave.mul(component)
+      fractionOfEquave_.mul(component)
     );
     return new ExtendedMonzo(vector);
   }
@@ -491,7 +492,7 @@ export class ExtendedMonzo {
   /**
    * Check for strict equality between this and another extended monzo.
    * @param other Another extended monzo.
-   * @returns `true` if the extended monzos share the same vector, residua and cents offset.
+   * @returns `true` if the extended monzos share the same vector, residual and cents offset.
    */
   strictEquals(other: ExtendedMonzo) {
     return (

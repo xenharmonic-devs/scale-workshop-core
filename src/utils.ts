@@ -47,3 +47,21 @@ export function fractionToString(
   }
   return `${numerator}/${fraction.d}`;
 }
+
+/**
+ * Convert a slash-separated string into pair of a numerator and a denominator.
+ * Compared to `Fraction` has extra support for negative denominators.
+ * @param input String to parse.
+ * @returns An array of integers `[numerator, denominator]`.
+ */
+export function stringToNumeratorDenominator(input: string): [number, number] {
+  const slashes = input.match(/\//g);
+  if (slashes && slashes.length > 1) {
+    throw new Error('Too many slashes for a fraction');
+  }
+  if (slashes === null) {
+    return [parseInt(input), 1];
+  }
+  const [numerator, denominator] = input.split('/');
+  return [parseInt(numerator), parseInt(denominator)];
+}

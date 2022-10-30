@@ -1,6 +1,11 @@
 import {describe, it, expect} from 'vitest';
 
-import {parseChord, parseLine as parseLine_} from '../parser';
+import {
+  enumerateChord,
+  parseChord,
+  parseLine as parseLine_,
+  parseScale,
+} from '../parser';
 import {ExtendedMonzo} from '../monzo';
 import {Interval} from '../interval';
 import {Fraction} from 'xen-dev-utils';
@@ -216,5 +221,61 @@ describe('Chord parser', () => {
     expect(cpsFactors[1].monzo.valueOf()).toBeCloseTo(3);
     expect(cpsFactors[2].monzo.valueOf()).toBeCloseTo(5);
     expect(cpsFactors[3].monzo.valueOf()).toBeCloseTo(7);
+  });
+});
+
+describe('Scale parse', () => {
+  it('parses a Scale-like string even with trailing whitespace', () => {
+    const input = ['9/8', ' 7\\12', '2,0  '].join('\n');
+    const scale = parseScale(input, DEFAULT_NUMBER_OF_COMPONENTS);
+    expect(
+      scale
+        .getMonzo(0)
+        .equals(ExtendedMonzo.fromFraction(1, DEFAULT_NUMBER_OF_COMPONENTS))
+    ).toBeTruthy();
+    expect(
+      scale
+        .getMonzo(1)
+        .equals(ExtendedMonzo.fromFraction('9/8', DEFAULT_NUMBER_OF_COMPONENTS))
+    ).toBeTruthy();
+    expect(
+      scale
+        .getMonzo(2)
+        .equals(
+          ExtendedMonzo.fromEqualTemperament(
+            '7/12',
+            2,
+            DEFAULT_NUMBER_OF_COMPONENTS
+          )
+        )
+    ).toBeTruthy();
+    expect(
+      scale
+        .getMonzo(3)
+        .equals(ExtendedMonzo.fromCents(1200, DEFAULT_NUMBER_OF_COMPONENTS))
+    ).toBeTruthy();
+  });
+});
+
+describe('Chord enumerator', () => {
+  it('parses a colon-separated string', () => {
+    const scale = enumerateChord('4:5:6:7:8', DEFAULT_NUMBER_OF_COMPONENTS);
+    expect(scale.getFrequency(0)).toBeCloseTo(440);
+    expect(scale.getFrequency(1)).toBeCloseTo(550);
+    expect(scale.getFrequency(2)).toBeCloseTo(660);
+    expect(scale.getFrequency(3)).toBeCloseTo(770);
+    expect(scale.getFrequency(4)).toBeCloseTo(880);
+    expect(scale.getFrequency(5)).toBeCloseTo(1100);
+  });
+
+  it('parses a space-separated string', () => {
+    const scale = enumerateChord(
+      '1\\15 1\\4 1\\2 3',
+      DEFAULT_NUMBER_OF_COMPONENTS
+    );
+    expect(scale.getFrequency(0)).toBeCloseTo(440);
+    expect(scale.getFrequency(1)).toBeCloseTo(499.62);
+    expect(scale.getFrequency(2)).toBeCloseTo(594.15);
+    expect(scale.getFrequency(3)).toBeCloseTo(1260.39);
   });
 });

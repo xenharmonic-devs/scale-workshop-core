@@ -529,7 +529,7 @@ export class Scale {
   }
 
   /**
-   * Obtain an interval of the scale (repeats at equaves).
+   * Obtain an {@link Interval} of the scale (repeats at equaves).
    * @param index Zero-based index of the interval.
    * @returns An interval of the scale with equaves added as necessary.
    */
@@ -542,7 +542,7 @@ export class Scale {
   /**
    * Obtain the ExtendedMonzo of an interval in the scale (repeats at equaves).
    * @param index Zero-based index of the interval.
-   * @returns An `ExtendedMonzo` of the scale with equaves added as necessary.
+   * @returns An {@link ExtendedMonzo} of the scale with equaves added as necessary.
    */
   getMonzo(index: number) {
     const numEquaves = Math.floor(index / this.size);

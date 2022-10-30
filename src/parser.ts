@@ -2,6 +2,7 @@ import {ExtendedMonzo} from './monzo';
 import {stringToNumeratorDenominator} from './utils';
 import {Interval, type IntervalOptions} from './interval';
 import {Fraction} from 'xen-dev-utils';
+import {Scale} from './scale';
 
 /**
  * The types of intervals strings can represent.
@@ -357,11 +358,11 @@ function parseComposite(
 }
 
 /**
- * Parse a string to the `Interval` it represents.
+ * Parse a string to the {@link Interval} it represents.
  * @param input A string to parse.
- * @param numberOfComponents Number of components to use for the `Interval` instance's monzo vector part.
+ * @param numberOfComponents Number of components to use for the {@link Interval} instance's monzo vector part.
  * @param options Formatting options.
- * @returns `Interval` instance constructed from the input string.
+ * @returns {@link Interval} instance constructed from the input string.
  * @throws An error if the input cannot be interpreted as an interval.
  */
 export function parseLine(
@@ -390,12 +391,13 @@ export function parseLine(
 }
 
 /**
- * Parse a colon-separated list into an array of `Interval` instances.
+ * Parse a colon-separated string into an array of {@link Interval} instances.
+ * To enumerate a {@link Scale} as chord see {@link enumerateChord}.
  * @param input A colon-separated string of substrings to parse.
- * @param numberOfComponents Number of components to use for the `Interval` instances' monzo vector part.
+ * @param numberOfComponents Number of components to use for the {@link Interval} instances' monzo vector part.
  * @param separator Separator to use when splitting the input.
  * @param options Formatting options.
- * @returns An array of `Interval` instances constructed from the input string.
+ * @returns An array of {@link Interval} instances constructed from the input string.
  */
 export function parseChord(
   input: string,
@@ -416,4 +418,43 @@ export function parseChord(
     }
   });
   return chord;
+}
+
+/**
+ * Parse a newline-separated string into a {@link Scale} instance.
+ * @param input Scala-like string to parse into a musical scale.
+ * @param numberOfComponents Number of components in monzo vector parts.
+ * @param baseFrequency Base frequency of plain 1/1.
+ * @param options Formatting options.
+ * @returns A {@link Scale} instance constructed from the input string.
+ */
+export function parseScale(
+  input: string,
+  numberOfComponents: number,
+  baseFrequency = 440.0,
+  options?: IntervalOptions
+) {
+  const intervals = input
+    .split('\n')
+    .map(line => parseLine(line, numberOfComponents, options));
+  return Scale.fromIntervalArray(intervals, baseFrequency);
+}
+
+/**
+ * Parse a colon- or whitespace-separated string into a {@link Scale} instance.
+ * @param input Colon- or whitespace-separated string of substrings to parse.
+ * @param numberOfComponents Number of components in monzo vector parts.
+ * @param baseFrequency Base frequency of the first interval in the input string.
+ * @param options Formatting options.
+ * @returns A {@link Scale} instance constructed from the input string.
+ */
+export function enumerateChord(
+  input: string,
+  numberOfComponents: number,
+  baseFrequency = 440.0,
+  options?: IntervalOptions
+) {
+  const separator = input.includes(':') ? ':' : /\s/;
+  const intervals = parseChord(input, numberOfComponents, separator, options);
+  return Scale.fromChord(intervals, baseFrequency);
 }

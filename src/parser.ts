@@ -19,9 +19,12 @@ export enum LINE_TYPE {
   INVALID = 'invalid',
 }
 
-// `true`, when the input is a string of digits
-// for example: '19'
-function isNumber(input: string): boolean {
+/**
+ * Check if the input is a string of digits.
+ * @param input A string to check.
+ * @returns `true` when the input is a string of digits.
+ */
+export function isNumber(input: string): boolean {
   return /^\d+$/.test(input.trim());
 }
 
@@ -139,7 +142,14 @@ export function getLineType(input: string) {
   return LINE_TYPE.INVALID;
 }
 
-function parseNumber(
+/**
+ * Parse a bare number to the {@link Interval} it represents.
+ * @param input A string to parse.
+ * @param numberOfComponents Number of components to use for the {@link Interval} instance's monzo vector part.
+ * @param options Formatting options.
+ * @returns {@link Interval} instance constructed from the input string.
+ */
+export function parseNumber(
   input: string,
   numberOfComponents: number,
   options?: IntervalOptions

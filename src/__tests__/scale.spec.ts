@@ -436,6 +436,19 @@ describe('Scale', () => {
         )
     ).toBeTruthy();
   });
+  it('can generate fractional equal temperament', () => {
+    const scale = Scale.fromFractionalTemperament(2.5, 1200.0, 1);
+    expect(scale.getMonzo(1).toCents()).toBeCloseTo(480.0);
+    expect(scale.getMonzo(2).toCents()).toBeCloseTo(960.0);
+    expect(scale.getMonzo(5).toCents()).toBeCloseTo(2400.0);
+  });
+  it('can generate (non-)fractional equal temperament', () => {
+    const scale = Scale.fromFractionalTemperament(3, 1200.0, 1);
+    expect(scale.getMonzo(1).toCents()).toBeCloseTo(400.0);
+    expect(scale.getMonzo(2).toCents()).toBeCloseTo(800.0);
+    expect(scale.getMonzo(3).toCents()).toBeCloseTo(1200.0);
+    expect(scale.getMonzo(4).toCents()).toBeCloseTo(1600.0);
+  });
   it('can generate rank 2', () => {
     const meantoneFifth = new Interval(
       ExtendedMonzo.fromEqualTemperament(

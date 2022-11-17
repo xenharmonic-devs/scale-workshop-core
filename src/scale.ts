@@ -50,6 +50,7 @@ export class Scale {
    * @param numberOfComponents Number of components in monzo vector parts.
    * @param baseFrequency Base frequency of unison.
    * @returns A new musical scale that equally divides the given equave.
+   * @throws An error if `divisions` is not an integer.
    */
   static fromEqualTemperament(
     divisions: number,
@@ -57,6 +58,9 @@ export class Scale {
     numberOfComponents: number,
     baseFrequency = 440
   ) {
+    if (divisions !== Math.floor(divisions)) {
+      throw new Error('Number of notes per equave must be an integer');
+    }
     const options: IntervalOptions = {
       preferredEtDenominator: divisions,
       preferredEtEquave: equave,
@@ -82,6 +86,39 @@ export class Scale {
       undefined,
       options
     );
+    return new Scale(intervals, equaveInterval, baseFrequency);
+  }
+
+  /**
+   * Construct a new musical scale that equally divides an interval in pitch-space.
+   * @param divisions Number of notes per equave. Doesn't have to be an integer.
+   * @param equaveCents Size of the equave to divide in cents.
+   * @param numberOfComponents Number of components in monzo vector parts.
+   * @param baseFrequency Base frequency of unison.
+   * @returns A new musical scale that equally divides the given equave.
+   */
+  static fromFractionalTemperament(
+    divisions: number,
+    equaveCents: number,
+    numberOfComponents: number,
+    baseFrequency = 440
+  ) {
+    const intervals: Interval[] = [];
+    for (let i = 0; i <= divisions; ++i) {
+      intervals.push(
+        new Interval(
+          ExtendedMonzo.fromCents(
+            (equaveCents * i) / divisions,
+            numberOfComponents
+          ),
+          'cents'
+        )
+      );
+    }
+    const equaveInterval = intervals.pop();
+    if (equaveInterval === undefined) {
+      throw new Error('Too few divisions');
+    }
     return new Scale(intervals, equaveInterval, baseFrequency);
   }
 

@@ -775,6 +775,25 @@ describe('Scale', () => {
     }
   });
 
+  it('can produce a GO scale in a few operations', () => {
+    const base = Scale.fromRank2(
+      new Interval(ExtendedMonzo.fromFraction('3/2', 3), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(2, 3), 'ratio'),
+      4,
+      0
+    );
+    const zarlino = base
+      .transpose(new Interval(ExtendedMonzo.fromFraction('5/4', 3), 'ratio'))
+      .filter()
+      .merge(base)
+      .rotate(4);
+    expect(zarlino.size).toBe(7);
+    const lines = [...Array(8).keys()]
+      .map(i => zarlino.getMonzo(i).toFraction().toFraction())
+      .join(' ');
+    expect(lines).toBe('1 9/8 5/4 4/3 3/2 5/3 15/8 2');
+  });
+
   it('can be reverse parsed', () => {
     const scale = Scale.fromIntervalArray([
       new Interval(

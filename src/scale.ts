@@ -680,6 +680,19 @@ export class Scale {
   }
 
   /**
+   * Remove intervals that do not fit between the unison and the equave.
+   * @returns A variant of the scale where all intervals fit inside the equave.
+   */
+  filter() {
+    const unison = this.equave.zeroed();
+    const intervals = this.intervals.filter(
+      interval =>
+        interval.compare(unison) >= 0 && interval.compare(this.equave) <= 0
+    );
+    return this.variant(intervals);
+  }
+
+  /**
    * Repeat the scale at the equave and replace the old equave. Produces the same frequencies as the old scale.
    * @param numRepeats Number of repeats.
    * @param deep Create new copies of the Interval instances.

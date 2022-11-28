@@ -900,7 +900,7 @@ export class Scale {
    * @returns A new scale with intervals from both without duplicates.
    */
   merge(other: Scale) {
-    return this.concat(other).reduce().removeDuplicatesInPlace().sortInPlace();
+    return this.concat(other).removeDuplicatesInPlace().sortInPlace();
   }
 
   /**

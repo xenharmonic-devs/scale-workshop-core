@@ -759,7 +759,7 @@ describe('Scale', () => {
     );
     const tesseract = Scale.fromCube([three, five, seven, eleven], two);
     const octaplex = orthoplex.merge(
-      tesseract.transpose(neutralDiagonal.neg())
+      tesseract.transpose(neutralDiagonal.neg()).reduce()
     );
     // Check that it's an orthoplex with origin
     expect(octaplex.size).toBe(24 + 1);

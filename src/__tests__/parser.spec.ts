@@ -187,6 +187,17 @@ describe('Line parser', () => {
     const ratio = parseLine('4/24');
     expect(ratio.zeroed().name).toBe('1/1');
   });
+
+  it('optionally admits bare numbers', () => {
+    const ratio = parseLine_(
+      '3',
+      DEFAULT_NUMBER_OF_COMPONENTS,
+      undefined,
+      true
+    );
+    expect(ratio.type).toBe('ratio');
+    expect(ratio.monzo.valueOf()).toBe(3);
+  });
 });
 
 describe('Chord parser', () => {

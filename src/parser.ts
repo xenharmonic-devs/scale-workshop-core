@@ -362,15 +362,18 @@ function parseComposite(
  * @param input A string to parse.
  * @param numberOfComponents Number of components to use for the {@link Interval} instance's monzo vector part.
  * @param options Formatting options.
+ * @param admitBareNumbers Interprete bare numbers as n/1 ratios instead of throwing an error.
  * @returns {@link Interval} instance constructed from the input string.
  * @throws An error if the input cannot be interpreted as an interval.
  */
 export function parseLine(
   input: string,
   numberOfComponents: number,
-  options?: IntervalOptions
+  options?: IntervalOptions,
+  admitBareNumbers = false
 ): Interval {
-  switch (getLineType(input)) {
+  const lineType = getLineType(input);
+  switch (lineType) {
     case LINE_TYPE.CENTS:
       return parseCents(input, numberOfComponents, options);
     case LINE_TYPE.DECIMAL:
@@ -386,6 +389,9 @@ export function parseLine(
     case LINE_TYPE.COMPOSITE:
       return parseComposite(input, numberOfComponents, options);
     default:
+      if (admitBareNumbers && lineType === LINE_TYPE.NUMBER) {
+        return parseNumber(input, numberOfComponents, options);
+      }
       throw new Error(`Failed to parse ${input}`);
   }
 }

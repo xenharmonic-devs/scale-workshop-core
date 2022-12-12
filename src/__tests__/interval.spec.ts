@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 
 import {ExtendedMonzo} from '../monzo';
-import {Interval} from '../interval';
+import {Interval, IntervalOptions} from '../interval';
 import {Fraction} from 'xen-dev-utils';
 
 describe('Scale line reverse parsing', () => {
@@ -193,5 +193,55 @@ describe('Scale line reverse parsing', () => {
       preferredEtDenominator: 10,
     });
     expect(interval.toString()).toBe('2\\10<3>');
+  });
+
+  it('has reasonable formatting on addition', () => {
+    const options: IntervalOptions = {
+      decimalFractionDigits: 2,
+      centsFractionDigits: 2,
+    };
+
+    const cents = new Interval(
+      ExtendedMonzo.fromCents(1234.5, 2),
+      'cents',
+      undefined,
+      options
+    );
+    const decimal = new Interval(
+      ExtendedMonzo.fromValue(1.5, 2),
+      'decimal',
+      undefined,
+      options
+    );
+    const monzo = new Interval(
+      new ExtendedMonzo([new Fraction(-1, 2), new Fraction(2, 3)]),
+      'monzo'
+    );
+    const ratio = new Interval(ExtendedMonzo.fromFraction('16/9', 2), 'ratio');
+    const combination = new Interval(
+      new ExtendedMonzo(
+        [new Fraction(2), new Fraction(-1)],
+        new Fraction(1),
+        2.5
+      ),
+      'any',
+      undefined,
+      options
+    );
+    const intervals = [cents, decimal, monzo, ratio, combination];
+    let result = '';
+    for (const first of intervals) {
+      result += '|';
+      for (const second of intervals) {
+        result += first.add(second).toString() + ';';
+      }
+    }
+    expect(result).toBe(
+      '|2469.;3,06;[-1/2, 2/3> + 1234.5;16/9 + 1234.5;[2, -1> + 1237.;' +
+        '|3,06;2,25;[-1/2, 2/3> + 701.96;16/9 + 701.96;[2, -1> + 704.46;' +
+        '|[-1/2, 2/3> + 1234.5;[-1/2, 2/3> + 701.96;[-1, 4/3>;[7/2, -4/3>;[3/2, -1/3> + 2.5;' +
+        '|16/9 + 1234.5;16/9 + 701.96;[7/2, -4/3>;256/81;[6, -3> + 2.5;' +
+        '|[2, -1> + 1237.;[2, -1> + 704.46;[3/2, -1/3> + 2.5;[6, -3> + 2.5;[4, -2> + 5.;'
+    );
   });
 });

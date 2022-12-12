@@ -139,6 +139,16 @@ export class Interval {
     if (other.type === 'cents') {
       return new Interval(monzo, this.type, this.name, options);
     }
+    if (this.type === 'decimal') {
+      if (other.type === 'decimal') {
+        return new Interval(monzo, other.type, undefined, options);
+      } else {
+        return new Interval(monzo, other.type, other.name, options);
+      }
+    }
+    if (other.type === 'decimal') {
+      return new Interval(monzo, this.type, this.name, options);
+    }
     if (this.type === 'monzo') {
       if (other.type === 'monzo' || other.type === 'equal temperament') {
         return new Interval(monzo, this.type, undefined, options);

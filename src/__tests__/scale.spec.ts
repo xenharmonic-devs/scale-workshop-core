@@ -989,4 +989,21 @@ describe('Scale', () => {
     expect(scale.getMonzo(1).cents).toBeTruthy();
     expect(scale.getMonzo(2).cents).toBeTruthy();
   });
+
+  it('respells the equave when approximated in equal temperament', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(4, 12)),
+        'equal temperament',
+        '4\\12'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(5, 5)),
+        'equal temperament',
+        '5\\5'
+      ),
+    ]).approximateEqualTemperament(15);
+    expect(scale.getName(1)).toBe('5\\15');
+    expect(scale.getName(2)).toBe('15\\15');
+  });
 });

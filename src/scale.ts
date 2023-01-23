@@ -956,6 +956,7 @@ export class Scale {
     if (equave.type === 'ratio') {
       equave.type = 'equal temperament';
     }
+    equave.name = equave.toString();
     const step = equave.div(divisions).mergeOptions(options);
     const stepCents = step.totalCents();
     const intervals = this.intervals.map(interval => {

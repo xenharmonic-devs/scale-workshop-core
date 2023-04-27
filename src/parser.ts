@@ -379,6 +379,7 @@ function parseComposite(
  * @param numberOfComponents Number of components to use for the {@link Interval} instance's monzo vector part.
  * @param options Formatting options.
  * @param admitBareNumbers Interprete bare numbers as n/1 ratios instead of throwing an error.
+ * @param universalMinus Allow unary minus operator in front of every line type.
  * @returns {@link Interval} instance constructed from the input string.
  * @throws An error if the input cannot be interpreted as an interval.
  */
@@ -386,8 +387,18 @@ export function parseLine(
   input: string,
   numberOfComponents: number,
   options?: IntervalOptions,
-  admitBareNumbers = false
+  admitBareNumbers = false,
+  universalMinus = true
 ): Interval {
+  if (universalMinus && input.startsWith('-')) {
+    return parseLine(
+      input.slice(1),
+      numberOfComponents,
+      options,
+      admitBareNumbers,
+      universalMinus
+    ).neg();
+  }
   const lineType = getLineType(input);
   switch (lineType) {
     case LINE_TYPE.CENTS:

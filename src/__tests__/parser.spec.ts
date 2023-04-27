@@ -23,8 +23,25 @@ describe('Line parser', () => {
     expect(() => parseLine('42')).toThrow();
   });
 
-  it("doesn't parse negative fractions", () => {
-    expect(() => parseLine('-1/2')).toThrow();
+  it('parses negative fractions and interpretes them as inverses', () => {
+    const result = parseLine('-1/2');
+    expect(
+      result.equals(
+        new Interval(
+          ExtendedMonzo.fromFraction(
+            new Fraction(2),
+            DEFAULT_NUMBER_OF_COMPONENTS
+          ),
+          'ratio'
+        )
+      )
+    ).toBeTruthy();
+  });
+
+  it("doesn't parse negative fractions with universal minus disabled", () => {
+    expect(() =>
+      parseLine_('-1/2', DEFAULT_NUMBER_OF_COMPONENTS, undefined, false, false)
+    ).toThrow();
   });
 
   it('parses N-of-EDO (negative)', () => {

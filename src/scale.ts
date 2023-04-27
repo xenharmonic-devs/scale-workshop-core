@@ -573,6 +573,9 @@ export class Scale {
   getInterval(index: number) {
     const numEquaves = Math.floor(index / this.size);
     index -= numEquaves * this.size;
+    if (numEquaves === 0) {
+      return this.intervals[index];
+    }
     return this.intervals[index].add(this.equave.mul(numEquaves));
   }
 

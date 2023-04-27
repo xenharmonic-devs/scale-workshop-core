@@ -171,6 +171,19 @@ describe('Scale', () => {
     ).toBeTruthy();
     expect(scale.getInterval(3).type).toBe('equal temperament');
   });
+  it('can be rotated (mixed)', () => {
+    const intervals = [
+      new Interval(ExtendedMonzo.fromCents(100, 1), 'cents'),
+      new Interval(ExtendedMonzo.fromCents(300, 1), 'cents'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2), 1), 'ratio'),
+    ];
+    const scale = Scale.fromIntervalArray(intervals).rotate();
+    expect(scale.getInterval(0).name).toBe('0.');
+    expect(scale.getInterval(1).name).toBe('200.');
+    expect(scale.getInterval(2).name).toBe('2/1 - 100.');
+    expect(scale.getInterval(2).isComposite()).toBeTruthy();
+    expect(scale.getInterval(2).centsString()).toBe('1100.');
+  });
   it('supports taking a subset', () => {
     const intervals = [
       new Interval(ExtendedMonzo.fromFraction(new Fraction(5, 4), 3), 'ratio'),

@@ -464,3 +464,43 @@ export function enumerateChord(
   const intervals = parseChord(input, numberOfComponents, separator, options);
   return Scale.fromChord(intervals, baseFrequency);
 }
+
+/**
+ * Convert an interval to its string representation.
+ * @param interval {@link Interval} instance to be converted
+ * @param admitBareNumbers Interprete bare numbers as n/1 ratios instead of throwing an error.
+ * @returns String representation of the interval.
+ */
+export function reverseParseInterval(
+  interval: Interval,
+  admitBareNumbers = false
+) {
+  // Check if the intended name is exact
+  try {
+    const intended = parseLine(
+      interval.name,
+      interval.monzo.numberOfComponents,
+      interval.options,
+      admitBareNumbers
+    );
+    if (intended.equals(interval)) {
+      return interval.name;
+    }
+  } catch {}
+  // Fall back to reconstructed string representation
+  return interval.toString();
+}
+
+/**
+ * Convert a scale to an array of strings representing the constituent intervals.
+ * @param scale {@link Scale} instance to be converted.
+ * @param admitBareNumbers Interprete bare numbers as n/1 ratios instead of throwing an error.
+ * @returns Array of strings representing the scale.
+ */
+export function reverseParseScale(scale: Scale, admitBareNumbers = false) {
+  const result = scale.intervals
+    .slice(1)
+    .map(interval => reverseParseInterval(interval, admitBareNumbers));
+  result.push(reverseParseInterval(scale.equave, admitBareNumbers));
+  return result;
+}

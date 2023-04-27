@@ -5,10 +5,11 @@ import {
   parseChord,
   parseLine as parseLine_,
   parseScale,
+  reverseParseScale,
 } from '../parser';
 import {ExtendedMonzo} from '../monzo';
 import {Interval} from '../interval';
-import {Fraction} from 'xen-dev-utils';
+import {arraysEqual, Fraction} from 'xen-dev-utils';
 import {Scale} from '../scale';
 
 const DEFAULT_NUMBER_OF_COMPONENTS = 25;
@@ -288,5 +289,46 @@ describe('Chord enumerator', () => {
     expect(scale.getFrequency(1)).toBeCloseTo(499.62);
     expect(scale.getFrequency(2)).toBeCloseTo(594.15);
     expect(scale.getFrequency(3)).toBeCloseTo(1260.39);
+  });
+});
+
+describe('Reverse parser', () => {
+  it('preserves intended names when possible', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromFraction(new Fraction(13, 12), 15),
+        'ratio',
+        '13/8 - 3/2'
+      ),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2), 15), 'ratio'),
+    ]);
+    const lines = reverseParseScale(scale);
+    expect(arraysEqual(lines, ['13/8 - 3/2', '2/1'])).toBeTruthy();
+  });
+
+  it('replaces intended names when parsing is impossible', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromFraction(new Fraction(13, 12), 15),
+        'ratio',
+        'Bob'
+      ),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2), 15), 'ratio'),
+    ]);
+    const lines = reverseParseScale(scale);
+    expect(arraysEqual(lines, ['13/12', '2/1'])).toBeTruthy();
+  });
+
+  it('replaces intended names when they are parseable but incorrect', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromFraction(new Fraction(13, 12), 15),
+        'ratio',
+        '14/13'
+      ),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2), 15), 'ratio'),
+    ]);
+    const lines = reverseParseScale(scale);
+    expect(arraysEqual(lines, ['13/12', '2/1'])).toBeTruthy();
   });
 });

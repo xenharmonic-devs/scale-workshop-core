@@ -28,13 +28,13 @@ function isNumber(input: string): boolean {
 // `true`, when the input has digits at the beginning, followed by a dot, ending with any number of digits
 // for example: '700.00', '-700.'
 function isCent(input: string): boolean {
-  return /^-?\d+\.\d*$/.test(input.trim());
+  return /^-?\d*\.\d*$/.test(input.trim());
 }
 
 // `true`, when the input has numbers at the beginning, followed by a comma, ending with any number of digits
 // for example: '1,25'
 function isCommaDecimal(input: string): boolean {
-  return /^\d+,\d*$/.test(input.trim());
+  return /^\d*,\d*$/.test(input.trim());
 }
 
 // `true`, when the input has digits at the beginning and the end, separated by a single slash
@@ -158,6 +158,14 @@ function parseCents(
   numberOfComponents: number,
   options?: IntervalOptions
 ) {
+  if (input.trim() === '.') {
+    return new Interval(
+      ExtendedMonzo.fromCents(0, numberOfComponents),
+      'cents',
+      input,
+      options
+    );
+  }
   const cents = parseFloat(input);
   if (isNaN(cents)) {
     throw new Error(`Failed to parse ${input} to cents`);
@@ -175,6 +183,14 @@ function parseDecimal(
   numberOfComponents: number,
   options?: IntervalOptions
 ) {
+  if (input.trim() === ',') {
+    return new Interval(
+      ExtendedMonzo.fromValue(0, numberOfComponents),
+      'decimal',
+      input,
+      options
+    );
+  }
   const value = parseFloat(input.replace(',', '.'));
   if (isNaN(value)) {
     throw new Error(`Failed to parse ${input} to decimal`);

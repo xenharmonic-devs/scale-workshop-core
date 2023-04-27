@@ -199,6 +199,27 @@ describe('Line parser', () => {
     expect(ratio.type).toBe('ratio');
     expect(ratio.monzo.valueOf()).toBe(3);
   });
+
+  it('supports omitting leading zeros', () => {
+    const quarterCents = parseLine('.25');
+    const half = parseLine(',5');
+    expect(quarterCents.totalCents()).toBe(0.25);
+    expect(half.monzo.valueOf()).toBeCloseTo(0.5);
+  });
+
+  it('supports omitting trailing zeros', () => {
+    const cent = parseLine('1.');
+    const two = parseLine('2,');
+    expect(cent.totalCents()).toBe(1);
+    expect(two.monzo.valueOf()).toBeCloseTo(2);
+  });
+
+  it('supports completely omitted zeros', () => {
+    const noCents = parseLine('.');
+    const zero = parseLine(',');
+    expect(noCents.totalCents()).toBe(0);
+    expect(zero.monzo.valueOf()).toBe(0);
+  });
 });
 
 describe('Chord parser', () => {

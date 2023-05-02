@@ -305,6 +305,19 @@ describe('Scale parse', () => {
         .equals(ExtendedMonzo.fromCents(1200, DEFAULT_NUMBER_OF_COMPONENTS))
     ).toBeTruthy();
   });
+
+  it('parses with preferences', () => {
+    const input = [
+      '5/4 - 0.31',
+      '4/3 + 7.797',
+      '3/2 + 2.095',
+      '2/1 + 6.595',
+    ].join('\n');
+    const scale = parseScale(input, DEFAULT_NUMBER_OF_COMPONENTS, 440, {
+      centsFractionDigits: 3,
+    }).rotate();
+    expect(scale.getName(2)).toBe('6/5 + 2.405');
+  });
 });
 
 describe('Chord enumerator', () => {

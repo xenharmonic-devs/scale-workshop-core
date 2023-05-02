@@ -184,6 +184,24 @@ describe('Scale', () => {
     expect(scale.getInterval(2).isComposite()).toBeTruthy();
     expect(scale.getInterval(2).centsString()).toBe('1100.');
   });
+  it('preserves precision when rotated', () => {
+    const monzos = [
+      ExtendedMonzo.fromFraction(new Fraction(5, 4), 3),
+      ExtendedMonzo.fromFraction(new Fraction(4, 3), 3),
+      ExtendedMonzo.fromFraction(new Fraction(3, 2), 3),
+      ExtendedMonzo.fromFraction(new Fraction(2, 1), 3),
+    ];
+    monzos[0].cents = 0.31;
+    monzos[1].cents = 7.797;
+    monzos[2].cents = 2.095;
+    monzos[3].cents = 6.595;
+
+    const intervals = monzos.map(
+      monzo => new Interval(monzo, 'ratio', undefined, {centsFractionDigits: 3})
+    );
+    const scale = Scale.fromIntervalArray(intervals).rotate();
+    expect(scale.getName(2)).toBe('6/5 + 1.785');
+  });
   it('supports taking a subset', () => {
     const intervals = [
       new Interval(ExtendedMonzo.fromFraction(new Fraction(5, 4), 3), 'ratio'),

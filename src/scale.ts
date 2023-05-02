@@ -214,7 +214,7 @@ export class Scale {
           ),
           'ratio',
           undefined,
-          {preferredDenominator: denominator}
+          {preferredDenominator: BigInt(denominator)}
         )
       );
     }
@@ -256,7 +256,7 @@ export class Scale {
           ),
           'ratio',
           undefined,
-          {preferredNumerator: numerator}
+          {preferredNumerator: BigInt(numerator)}
         )
       );
     }

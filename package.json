@@ -42,6 +42,6 @@
     "doc": "typedoc --entryPointStrategy packages . --name scale-workshop-core"
   },
   "dependencies": {
-    "xen-dev-utils": "github:xenharmonic-devs/xen-dev-utils#v0.1.1"
+    "xen-dev-utils": "github:xenharmonic-devs/xen-dev-utils#bigint-monzos"
   }
 }

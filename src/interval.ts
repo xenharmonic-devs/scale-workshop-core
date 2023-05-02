@@ -1,5 +1,5 @@
 import {ExtendedMonzo} from './monzo';
-import {fractionToString, isSafeFraction} from './utils';
+import {bigNumeratorDenominatorToString, fractionToString, isSafeFraction} from './utils';
 import {Fraction} from 'xen-dev-utils';
 
 /** Interval formatting options. */
@@ -9,9 +9,9 @@ export type IntervalOptions = {
   /** Prevent formatting as a composite interval. */
   forbidComposite?: boolean;
   /** Preferred numerator when formatted as a fraction. */
-  preferredNumerator?: number;
+  preferredNumerator?: bigint;
   /** Preferred denominator when formatted as a fraction. */
-  preferredDenominator?: number;
+  preferredDenominator?: bigint;
   /** Preferred denomimator when formatted as equal temperament. */
   preferredEtDenominator?: number;
   /** Preferred equave when formatted as equal temperament. */
@@ -272,7 +272,7 @@ export class Interval {
    */
   approximateHarmonic(denominator: number) {
     const options = Object.assign({}, this.options);
-    options.preferredDenominator = denominator;
+    options.preferredDenominator = BigInt(denominator);
     return new Interval(
       this.monzo.approximateHarmonic(denominator),
       'ratio',
@@ -288,7 +288,7 @@ export class Interval {
    */
   approximateSubharmonic(numerator: number) {
     const options = Object.assign({}, this.options);
-    options.preferredNumerator = numerator;
+    options.preferredNumerator = BigInt(numerator);
     return new Interval(
       this.monzo.approximateSubharmonic(numerator),
       'ratio',
@@ -498,19 +498,15 @@ export class Interval {
       maybeFraction.cents = 0;
 
       if (maybeFraction.isFractional()) {
-        const fraction = maybeFraction.toFraction();
-        if (isSafeFraction(fraction)) {
-          return (
-            fractionToString(
-              fraction,
-              options.preferredNumerator,
-              options.preferredDenominator
-            ) + this.centsString(true)
-          );
-        }
-        if (options.forbidMonzo) {
-          return cents();
-        }
+        const [numerator, denominator] = maybeFraction.toBigNumeratorDenominator();
+        return (
+          bigNumeratorDenominatorToString(
+            numerator,
+            denominator,
+            options.preferredNumerator,
+            options.preferredDenominator
+          ) + this.centsString(true)
+        );
       } else {
         console.warn('Failed to represent ratio line. Falling back.');
       }
@@ -558,8 +554,8 @@ export class Interval {
           ' + ' +
           fractionToString(
             this.monzo.residual,
-            options.preferredNumerator,
-            options.preferredDenominator
+            undefined,
+            undefined
           )
         );
       } else {
@@ -580,8 +576,8 @@ export class Interval {
       ' + ' +
       fractionToString(
         this.monzo.residual,
-        options.preferredNumerator,
-        options.preferredDenominator
+        undefined,
+        undefined
       ) +
       this.centsString(true)
     );

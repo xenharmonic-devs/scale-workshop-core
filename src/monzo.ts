@@ -9,6 +9,8 @@ import {
   PRIME_CENTS,
   toMonzoAndResidual,
   valueToCents,
+  bigIntToMonzoAndResidual,
+  BIG_INT_PRIMES
 } from 'xen-dev-utils';
 
 export type FractionalMonzo = Fraction[];
@@ -149,6 +151,36 @@ export class ExtendedMonzo {
   }
 
   /**
+   * Construct an extended monzo from a big integer.
+   * @param bigInt Integer to convert.
+   * @param numberOfComponents Number of components in the monzo vector part.
+   * @returns Extended monzo representing the just intonation interval.
+   */
+  static fromBigInt(bigInt: bigint, numberOfComponents: number) {
+    const [vector, residual] = bigIntToMonzoAndResidual(bigInt, numberOfComponents);
+    return new ExtendedMonzo(
+      vector.map(c => new Fraction(c)),
+      new Fraction(residual.toString())
+    );
+  }
+
+  /**
+   * Construct an extended monzo from big integer numerator and denominator.
+   * @param numerator Numerator to convert.
+   * @param denominator Denominator to convert.
+   * @param numberOfComponents Number of components in the monzo vector part.
+   * @returns Extended monzo representing the just intonation interval.
+   */
+  static fromBigNumeratorDenominator(numerator: bigint, denominator: bigint, numberOfComponents: number) {
+    const [numeratorVector, numeratorResidual] = bigIntToMonzoAndResidual(numerator, numberOfComponents);
+    const [denominatorVector, denominatorResidual] = bigIntToMonzoAndResidual(denominator, numberOfComponents);
+    return new ExtendedMonzo(
+      numeratorVector.map((c, i) => new Fraction(c, denominatorVector[i])),
+      new Fraction(numeratorResidual.toString()).div(new Fraction(denominatorResidual.toString()))
+    );
+  }
+
+  /**
    * Number of components in the monzo vector part.
    */
   get numberOfComponents() {
@@ -185,6 +217,31 @@ export class ExtendedMonzo {
       result = result.mul(factor);
     });
     return result;
+  }
+
+  /**
+   * Convert the extended monzo to a numerator and denominator in frequency-space.
+   * @returns Numerator and denominator of a musical ratio in frequency-space.
+   * @throws An error if the extended monzo cannot be represented as a ratio.
+   */
+  toBigNumeratorDenominator() {
+    if (this.cents !== 0) {
+      throw new Error('Unable to convert irrational number to fraction');
+    }
+    let numerator = BigInt(this.residual.n);
+    let denominator = BigInt(this.residual.d);
+    this.vector.forEach((component, i) => {
+      if (component.d !== 1) {
+        throw new Error('Unable to convert irrational number to fraction');
+      }
+      const factor = BIG_INT_PRIMES[i];
+      if (component.s > 0) {
+        numerator *= factor ** BigInt(component.n);
+      } else if (component.s < 0) {
+        denominator *= factor ** BigInt(component.n);
+      }
+    });
+    return [numerator, denominator];
   }
 
   /**

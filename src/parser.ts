@@ -144,9 +144,9 @@ function parseNumber(
   numberOfComponents: number,
   options?: IntervalOptions
 ) {
-  const number = parseInt(input);
+  const number = BigInt(input);
   return new Interval(
-    ExtendedMonzo.fromFraction(number, numberOfComponents),
+    ExtendedMonzo.fromBigInt(number, numberOfComponents),
     'ratio',
     input,
     options
@@ -214,13 +214,13 @@ function parseNOfEdo(
   const octave = new Fraction(2);
   if (options === undefined) {
     options = {
-      preferredEtDenominator: denominator,
+      preferredEtDenominator: parseInt(denominator.toString()),
       preferredEtEquave: octave,
     };
   }
   return new Interval(
     ExtendedMonzo.fromEqualTemperament(
-      new Fraction(numerator, denominator),
+      new Fraction(parseInt(numerator.toString()), parseInt(denominator.toString())),
       octave,
       numberOfComponents
     ),
@@ -242,13 +242,13 @@ function parseNOfEdji(
   const equave = new Fraction(equavePart.slice(0, -1));
   if (options === undefined) {
     options = {
-      preferredEtDenominator: denominator,
+      preferredEtDenominator: parseInt(denominator.toString()),
       preferredEtEquave: equave,
     };
   }
   return new Interval(
     ExtendedMonzo.fromEqualTemperament(
-      new Fraction(numerator, denominator),
+      new Fraction(parseInt(numerator.toString()), parseInt(denominator.toString())),
       equave,
       numberOfComponents
     ),
@@ -272,7 +272,7 @@ function parseMonzo(
       token = token.trim();
       if (token.length) {
         const [numerator, denominator] = stringToNumeratorDenominator(token);
-        components.push(new Fraction(numerator, denominator));
+        components.push(new Fraction(parseInt(numerator.toString()), parseInt(denominator.toString())));
       }
     });
   if (components.length > numberOfComponents) {
@@ -290,15 +290,15 @@ function parseRatio(
   options?: IntervalOptions,
   inferPreferences = false
 ) {
+  const [numerator, denominator] = stringToNumeratorDenominator(input);
   if (inferPreferences && options === undefined) {
-    const [numerator, denominator] = stringToNumeratorDenominator(input);
     options = {
       preferredNumerator: numerator,
       preferredDenominator: denominator,
     };
   }
   return new Interval(
-    ExtendedMonzo.fromFraction(new Fraction(input), numberOfComponents),
+    ExtendedMonzo.fromBigNumeratorDenominator(numerator, denominator, numberOfComponents),
     'ratio',
     input,
     options

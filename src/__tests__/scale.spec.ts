@@ -184,6 +184,15 @@ describe('Scale', () => {
     expect(scale.getInterval(2).isComposite()).toBeTruthy();
     expect(scale.getInterval(2).centsString()).toBe('1100.');
   });
+  it('does nothing when rotated by zero degrees (mixed)', () => {
+    const intervals = [
+      new Interval(ExtendedMonzo.fromCents(100, 1), 'cents'),
+      new Interval(ExtendedMonzo.fromCents(300, 1), 'cents'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2), 1), 'ratio'),
+    ];
+    const scale = Scale.fromIntervalArray(intervals).rotate(0);
+    expect(scale.getInterval(1).name).toBe('100.');
+  });
   it('preserves precision when rotated', () => {
     const monzos = [
       ExtendedMonzo.fromFraction(new Fraction(5, 4), 3),

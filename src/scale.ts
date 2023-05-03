@@ -734,6 +734,9 @@ export class Scale {
    */
   rotate(numSteps = 1) {
     numSteps = mmod(numSteps, this.size);
+    if (numSteps === 0) {
+      return this.variant(this.intervals);
+    }
     const root = this.intervals[numSteps];
     const intervals: Interval[] = [];
     for (let i = numSteps; i < this.size + numSteps; ++i) {

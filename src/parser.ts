@@ -496,11 +496,13 @@ export function enumerateChord(
  * Convert an interval to its string representation.
  * @param interval {@link Interval} instance to be converted
  * @param admitBareNumbers Interprete bare numbers as n/1 ratios instead of throwing an error.
+ * @param universalMinus Allow unary minus operator in front of every line type.
  * @returns String representation of the interval.
  */
 export function reverseParseInterval(
   interval: Interval,
-  admitBareNumbers = false
+  admitBareNumbers = false,
+  universalMinus = true
 ) {
   // Check if the intended name is exact
   try {
@@ -508,7 +510,8 @@ export function reverseParseInterval(
       interval.name,
       interval.monzo.numberOfComponents,
       interval.options,
-      admitBareNumbers
+      admitBareNumbers,
+      universalMinus
     );
     if (intended.equals(interval)) {
       return interval.name;
@@ -522,12 +525,21 @@ export function reverseParseInterval(
  * Convert a scale to an array of strings representing the constituent intervals.
  * @param scale {@link Scale} instance to be converted.
  * @param admitBareNumbers Interprete bare numbers as n/1 ratios instead of throwing an error.
+ * @param universalMinus Allow unary minus operator in front of every line type.
  * @returns Array of strings representing the scale.
  */
-export function reverseParseScale(scale: Scale, admitBareNumbers = false) {
+export function reverseParseScale(
+  scale: Scale,
+  admitBareNumbers = false,
+  universalMinus = true
+) {
   const result = scale.intervals
     .slice(1)
-    .map(interval => reverseParseInterval(interval, admitBareNumbers));
-  result.push(reverseParseInterval(scale.equave, admitBareNumbers));
+    .map(interval =>
+      reverseParseInterval(interval, admitBareNumbers, universalMinus)
+    );
+  result.push(
+    reverseParseInterval(scale.equave, admitBareNumbers, universalMinus)
+  );
   return result;
 }

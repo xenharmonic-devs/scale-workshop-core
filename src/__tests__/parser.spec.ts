@@ -272,6 +272,20 @@ describe('Chord parser', () => {
     expect(cpsFactors[2].monzo.valueOf()).toBeCloseTo(5);
     expect(cpsFactors[3].monzo.valueOf()).toBeCloseTo(7);
   });
+
+  it('parses mixed comma-separated monzos with comma-separated components', () => {
+    const monzos = parseChord(
+      '[0, 0, 0>, [-2, 0, 1>,[-1, 1, 0>:[1 0 0>',
+      3,
+      /,|:/
+    ).map(interval =>
+      interval.monzo.vector.map(component => component.valueOf())
+    );
+    expect(arraysEqual(monzos[0], [0, 0, 0])).toBeTruthy();
+    expect(arraysEqual(monzos[1], [-2, 0, 1])).toBeTruthy();
+    expect(arraysEqual(monzos[2], [-1, 1, 0])).toBeTruthy();
+    expect(arraysEqual(monzos[3], [1, 0, 0])).toBeTruthy();
+  });
 });
 
 describe('Scale parse', () => {

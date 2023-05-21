@@ -438,12 +438,12 @@ export function parseChord(
   separator: string | RegExp = ':',
   options?: IntervalOptions
 ) {
-  // Protect commas inside monzos
-  input = input.replace(/\[.*?>/g, match => match.replace(/,/g, '¤'));
+  // Protect commas and whitespace inside monzos
+  input = input.replace(/\[.*?>/g, match => match.replace(/,|\s/g, '¤'));
 
   const chord: Interval[] = [];
   input.split(separator).forEach(line => {
-    // Restore commas
+    // Restore commas (coalescing whitespace is fine)
     line = line.trim().replace(/¤/g, ',');
     if (!line.length) {
       return;

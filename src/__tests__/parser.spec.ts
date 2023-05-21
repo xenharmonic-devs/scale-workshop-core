@@ -286,6 +286,15 @@ describe('Chord parser', () => {
     expect(arraysEqual(monzos[2], [-1, 1, 0])).toBeTruthy();
     expect(arraysEqual(monzos[3], [1, 0, 0])).toBeTruthy();
   });
+
+  it('parses space-separated monzos with space-separated components', () => {
+    const monzos = parseChord('[0 0 0> [1 1 -1> [-1 1 0>', 3, /\s/).map(
+      interval => interval.monzo.vector.map(component => component.valueOf())
+    );
+    expect(arraysEqual(monzos[0], [0, 0, 0])).toBeTruthy();
+    expect(arraysEqual(monzos[1], [1, 1, -1])).toBeTruthy();
+    expect(arraysEqual(monzos[2], [-1, 1, 0])).toBeTruthy();
+  });
 });
 
 describe('Scale parse', () => {

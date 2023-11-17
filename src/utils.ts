@@ -65,3 +65,87 @@ export function stringToNumeratorDenominator(input: string): [number, number] {
   const [numerator, denominator] = input.split('/');
   return [parseInt(numerator), parseInt(denominator)];
 }
+
+export type MetricPrefix =
+  | 'Q'
+  | 'R'
+  | 'Y'
+  | 'Z'
+  | 'E'
+  | 'P'
+  | 'T'
+  | 'G'
+  | 'M'
+  | 'k'
+  | 'h'
+  | 'da'
+  | ''
+  | 'd'
+  | 'c'
+  | 'm'
+  | 'µ'
+  | 'n'
+  | 'p'
+  | 'f'
+  | 'a'
+  | 'z'
+  | 'y'
+  | 'r'
+  | 'q';
+
+export function metricPrefix(prefix: MetricPrefix): Fraction {
+  switch (prefix) {
+    case 'Q':
+      return new Fraction(1e30);
+    case 'R':
+      return new Fraction(1e27);
+    case 'Y':
+      return new Fraction(1e24);
+    case 'Z':
+      return new Fraction(1e21);
+    case 'E':
+      return new Fraction(1e18);
+    case 'P':
+      return new Fraction(1e15);
+    case 'T':
+      return new Fraction(1e12);
+    case 'G':
+      return new Fraction(1e9);
+    case 'M':
+      return new Fraction(1e6);
+    case 'k':
+      return new Fraction(1e3);
+    case 'h':
+      return new Fraction(1e2);
+    case 'da':
+      return new Fraction(1e1);
+    case '':
+      return new Fraction(1);
+    case 'd':
+      return new Fraction(1, 10);
+    case 'c':
+      return new Fraction(1, 100);
+    case 'm':
+      return new Fraction(1, 1000);
+    case '\u00B5':
+      return new Fraction(1, 1e6);
+    case 'n':
+      return new Fraction(1, 1e9);
+    case 'p':
+      return new Fraction(1, 1e12);
+    case 'f':
+      return new Fraction(1, 1e15);
+    case 'a':
+      return new Fraction(1, 1e18);
+    case 'z':
+      return new Fraction(1, 1e21);
+    case 'y':
+      return new Fraction(1, 1e24);
+    case 'r':
+      return new Fraction(1, 1e27);
+    case 'q':
+      return new Fraction(1, 1e30);
+    default:
+      throw new Error(`Unrecognized prefix ${prefix}`);
+  }
+}

@@ -59,7 +59,7 @@ describe('Extended Monzo', () => {
   });
   it('can be constructed from n of edo without default octave', () => {
     const flatFifth = new Fraction(13, 23);
-    const result = ExtendedMonzo.fromEqualTemperament(flatFifth);
+    const result = ExtendedMonzo.fromEqualTemperament(flatFifth, undefined, 1);
     expect(result.vector.length).toBe(1);
     expect(result.vector[0].equals(new Fraction(13, 23))).toBeTruthy();
     expect(result.residual.equals(1)).toBeTruthy();
@@ -76,19 +76,19 @@ describe('Extended Monzo', () => {
   });
   it('can be converted to n of edo', () => {
     const monzo = new ExtendedMonzo([new Fraction(5, 12)]);
-    const [fractionOfEquave, equave] = monzo.toEqualTemperament();
+    const {fractionOfEquave, equave} = monzo.toEqualTemperament();
     expect(fractionOfEquave.equals(new Fraction(5, 12))).toBeTruthy();
     expect(equave.equals(2)).toBeTruthy();
   });
   it('can be converted to equal temperament', () => {
     const monzo = new ExtendedMonzo([new Fraction(3), new Fraction(-3, 2)]);
-    const [fractionOfEquave, equave] = monzo.toEqualTemperament();
+    const {fractionOfEquave, equave} = monzo.toEqualTemperament();
     expect(fractionOfEquave.equals(new Fraction(3, 2))).toBeTruthy();
     expect(equave.equals(new Fraction(4, 3))).toBeTruthy();
   });
   it('converts the zero monzo to unison in the degenerate equal temperament 1ed1', () => {
     const monzo = new ExtendedMonzo([]);
-    const [fractionOfEquave, equave] = monzo.toEqualTemperament();
+    const {fractionOfEquave, equave} = monzo.toEqualTemperament();
     expect(fractionOfEquave.equals(0)).toBeTruthy();
     expect(equave.equals(1)).toBeTruthy();
   });
@@ -274,12 +274,18 @@ describe('Extended Monzo', () => {
     expect(tritaveJI.equals(tritaveCents)).toBeTruthy();
   });
 
-  it('throws for zero (number)', () => {
-    expect(() => ExtendedMonzo.fromFraction(0, 1)).toThrow();
+  it("doesn't throw for zero (number)", () => {
+    const zero = ExtendedMonzo.fromFraction(0, 1);
+    expect(zero.vector[0].equals(0)).toBeTruthy();
+    expect(zero.residual.equals(0)).toBeTruthy();
+    expect(zero.cents).toBe(0);
   });
 
   it('throws for zero (fraction)', () => {
-    expect(() => ExtendedMonzo.fromFraction(new Fraction(0), 1)).toThrow();
+    const zero = ExtendedMonzo.fromFraction(new Fraction(0), 1);
+    expect(zero.vector[0].equals(0)).toBeTruthy();
+    expect(zero.residual.equals(0)).toBeTruthy();
+    expect(zero.cents).toBe(0);
   });
 
   it('can be tested for being a power of two (residual)', () => {

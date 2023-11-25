@@ -1046,4 +1046,11 @@ describe('Scale', () => {
     expect(scale.getName(1)).toBe('5\\15');
     expect(scale.getName(2)).toBe('15\\15');
   });
+
+  it('can approximate 1/1 in a (degenerate) equal temperament', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(ExtendedMonzo.fromFraction('1/1', 1), 'ratio', '1/1'),
+    ]).approximateEqualTemperament(22);
+    expect(scale.getName(0)).toBe('0\\22<1>');
+  });
 });

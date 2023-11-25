@@ -965,6 +965,11 @@ export class Scale {
     equave.name = equave.toString();
     const step = equave.div(divisions).mergeOptions(options);
     const stepCents = step.totalCents();
+    if (!stepCents) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const intervals = this.intervals.map(interval => step.mul(0));
+      return new Scale(intervals, equave, this.baseFrequency);
+    }
     const intervals = this.intervals.map(interval => {
       const numSteps = Math.round(interval.totalCents() / stepCents);
       return step.mul(numSteps);

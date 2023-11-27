@@ -1,8 +1,8 @@
 import {ExtendedMonzo} from './monzo';
-import {stringToNumeratorDenominator} from './utils';
 import {Interval, type IntervalOptions} from './interval';
-import {Fraction} from 'xen-dev-utils';
+import {Fraction, PRIMES, PRIME_CENTS} from 'xen-dev-utils';
 import {Scale} from './scale';
+import {parse} from './sw2-ast';
 
 /**
  * The types of intervals strings can represent.
@@ -19,90 +19,67 @@ export enum LINE_TYPE {
   INVALID = 'invalid',
 }
 
-// `true`, when the input is a string of digits
-// for example: '19'
-function isNumber(input: string): boolean {
-  return /^\d+$/.test(input.trim());
-}
+// Abstract Syntax Tree hierarchy
+type PlainLiteral = {
+  type: 'PlainLiteral';
+  value: number;
+};
 
-// `true`, when the input has digits at the beginning, followed by a dot, ending with any number of digits
-// for example: '700.00', '-700.'
-function isCent(input: string): boolean {
-  return /^-?\d*\.\d*$/.test(input.trim());
-}
+type CentsLiteral = {
+  type: 'CentsLiteral';
+  whole: number | null;
+  fractional: string | null;
+};
 
-// `true`, when the input has numbers at the beginning, followed by a comma, ending with any number of digits
-// for example: '1,25'
-function isCommaDecimal(input: string): boolean {
-  return /^\d*,\d*$/.test(input.trim());
-}
+type NumericLiteral = {
+  type: 'NumericLiteral';
+  whole: number | null;
+  fractional: string | null;
+};
 
-// `true`, when the input has digits at the beginning and the end, separated by a single slash
-// for example: '3/2'
-function isRatio(input: string) {
-  return /^\d+\/\d+$/.test(input.trim());
-}
+type FractionLiteral = {
+  type: 'FractionLiteral';
+  numerator: number;
+  denominator: number;
+};
 
-// `true`, when the input has digits at the beginning and the end, separated by a single backslash
-// for example: '7\12', '-7\12'
-function isNOfEdo(input: string) {
-  return /^-?\d+\\-?\d+$/.test(input.trim());
-}
+type EdjiFraction = {
+  type: 'EdjiFraction';
+  numerator: number;
+  denominator: number;
+  equave: null | PlainLiteral | FractionLiteral;
+};
 
-// `true`, when input looks like N-of-EDO followed by a fraction or a number in angle brackets
-// for example: '7\11<3/2>', '-7\13<5>'
-function isNOfEdji(input: string) {
-  return /^-?\d+\\-?\d+<\d+(\/\d+)?>$/.test(input.trim());
-}
+type Monzo = {
+  type: 'Monzo';
+  components: string[];
+};
 
-// `true`, when input has a square bracket followed by a comma/space separated list of numbers or fractions followed by and angle bracket
-// for example: '[-4, 4, -1>'
-function isMonzo(input: string) {
-  return /^\[(-?\d+(\/-?\d+)?[\s,]*)*>$/.test(input.trim());
-}
+type UnaryExpression = {
+  type: 'UnaryExpression';
+  operator: '-';
+  operand: Expression;
+};
 
-// `true`, when input is not a combination of simpler line types.
-function isNonComposite(input: string) {
-  return (
-    isCent(input) ||
-    isCommaDecimal(input) ||
-    isNOfEdo(input) ||
-    isRatio(input) ||
-    isNOfEdji(input) ||
-    isMonzo(input)
-  );
-}
+type BinaryExpression = {
+  type: 'BinaryExpression';
+  operator: '+' | '-';
+  left: Expression;
+  right: Expression;
+};
 
-function isSubtractive(input: string) {
-  let prefix: string | undefined;
-  const parts = input.split('-');
-  for (let i = 0; i < parts.length; ++i) {
-    if (prefix === undefined) {
-      prefix = parts[i];
-    } else {
-      prefix += '-' + parts[i];
-    }
-    if (isNonComposite(prefix.trim())) {
-      prefix = undefined;
-    }
-  }
-  return !prefix?.length;
-}
+type Expression =
+  | PlainLiteral
+  | CentsLiteral
+  | NumericLiteral
+  | FractionLiteral
+  | EdjiFraction
+  | Monzo
+  | UnaryExpression
+  | BinaryExpression;
 
-// `true`, when input is a combination of simpler line types.
-// for example: '3/2 - 1.955'
-function isComposite(input: string) {
-  if (!input.includes('-') && !input.includes('+')) {
-    return false;
-  }
-  const parts = input.split('+');
-  for (let i = 0; i < parts.length; ++i) {
-    const part = parts[i].trim();
-    if (!isSubtractive(part)) {
-      return false;
-    }
-  }
-  return true;
+function parseAst(input: string): Expression {
+  return parse(input);
 }
 
 /**
@@ -111,266 +88,36 @@ function isComposite(input: string) {
  * @returns The type of interval the string represents.
  */
 export function getLineType(input: string) {
-  if (isCent(input)) {
-    return LINE_TYPE.CENTS;
+  try {
+    return getAstType(parseAst(input));
+  } catch {
+    return LINE_TYPE.INVALID;
   }
-  if (isCommaDecimal(input)) {
-    return LINE_TYPE.DECIMAL;
-  }
-  if (isNOfEdo(input)) {
-    return LINE_TYPE.N_OF_EDO;
-  }
-  if (isRatio(input)) {
-    return LINE_TYPE.RATIO;
-  }
-  if (isNOfEdji(input)) {
-    return LINE_TYPE.N_OF_EDJI;
-  }
-  if (isMonzo(input)) {
-    return LINE_TYPE.MONZO;
-  }
-  if (isComposite(input)) {
-    return LINE_TYPE.COMPOSITE;
-  }
-  if (isNumber(input)) {
-    return LINE_TYPE.NUMBER;
-  }
-
-  return LINE_TYPE.INVALID;
 }
 
-function parseNumber(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  const number = parseInt(input);
-  return new Interval(
-    ExtendedMonzo.fromFraction(number, numberOfComponents),
-    'ratio',
-    input,
-    options
-  );
+function getAstType(ast: Expression): LINE_TYPE {
+  switch (ast.type) {
+    case 'PlainLiteral':
+      return LINE_TYPE.NUMBER;
+    case 'CentsLiteral':
+      return LINE_TYPE.CENTS;
+    case 'NumericLiteral':
+      return LINE_TYPE.DECIMAL;
+    case 'FractionLiteral':
+      return LINE_TYPE.RATIO;
+    case 'EdjiFraction':
+      return ast.equave ? LINE_TYPE.N_OF_EDJI : LINE_TYPE.N_OF_EDO;
+    case 'Monzo':
+      return LINE_TYPE.MONZO;
+    case 'UnaryExpression':
+      return getAstType(ast.operand);
+    case 'BinaryExpression':
+      return LINE_TYPE.COMPOSITE;
+  }
 }
 
-function parseCents(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  if (input.trim() === '.') {
-    return new Interval(
-      ExtendedMonzo.fromCents(0, numberOfComponents),
-      'cents',
-      input,
-      options
-    );
-  }
-  const cents = parseFloat(input);
-  if (isNaN(cents)) {
-    throw new Error(`Failed to parse ${input} to cents`);
-  }
-  return new Interval(
-    ExtendedMonzo.fromCents(cents, numberOfComponents),
-    'cents',
-    input,
-    options
-  );
-}
-
-function parseDecimal(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  if (input.trim() === ',') {
-    return new Interval(
-      ExtendedMonzo.fromValue(0, numberOfComponents),
-      'decimal',
-      input,
-      options
-    );
-  }
-  const value = parseFloat(input.replace(',', '.'));
-  if (isNaN(value)) {
-    throw new Error(`Failed to parse ${input} to decimal`);
-  }
-  return new Interval(
-    ExtendedMonzo.fromValue(value, numberOfComponents),
-    'decimal',
-    input,
-    options
-  );
-}
-
-function parseNOfEdo(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  const [numerator, denominator] = stringToNumeratorDenominator(
-    input.replace('\\', '/')
-  );
-  const octave = new Fraction(2);
-  if (options === undefined) {
-    options = {
-      preferredEtDenominator: denominator,
-      preferredEtEquave: octave,
-    };
-  }
-  return new Interval(
-    ExtendedMonzo.fromEqualTemperament(
-      new Fraction(numerator, denominator),
-      octave,
-      numberOfComponents
-    ),
-    'equal temperament',
-    input,
-    options
-  );
-}
-
-function parseNOfEdji(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  const [nOfEdo, equavePart] = input.split('<');
-  const [numerator, denominator] = stringToNumeratorDenominator(
-    nOfEdo.replace('\\', '/')
-  );
-  const equave = new Fraction(equavePart.slice(0, -1));
-  if (options === undefined) {
-    options = {
-      preferredEtDenominator: denominator,
-      preferredEtEquave: equave,
-    };
-  }
-  return new Interval(
-    ExtendedMonzo.fromEqualTemperament(
-      new Fraction(numerator, denominator),
-      equave,
-      numberOfComponents
-    ),
-    'equal temperament',
-    input,
-    options
-  );
-}
-
-function parseMonzo(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  const components: Fraction[] = [];
-  input
-    .slice(1, -1)
-    .replace(/,/g, ' ')
-    .split(/\s/)
-    .forEach(token => {
-      token = token.trim();
-      if (token.length) {
-        const [numerator, denominator] = stringToNumeratorDenominator(token);
-        components.push(new Fraction(numerator, denominator));
-      }
-    });
-  if (components.length > numberOfComponents) {
-    throw new Error('Not enough components to represent monzo');
-  }
-  while (components.length < numberOfComponents) {
-    components.push(new Fraction(0));
-  }
-  return new Interval(new ExtendedMonzo(components), 'monzo', input, options);
-}
-
-function parseRatio(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions,
-  inferPreferences = false
-) {
-  if (inferPreferences && options === undefined) {
-    const [numerator, denominator] = stringToNumeratorDenominator(input);
-    options = {
-      preferredNumerator: numerator,
-      preferredDenominator: denominator,
-    };
-  }
-  return new Interval(
-    ExtendedMonzo.fromFraction(new Fraction(input), numberOfComponents),
-    'ratio',
-    input,
-    options
-  );
-}
-
-function parseSubtractive(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-): [Interval, boolean] {
-  let centCount = 0;
-  let prefix: string | undefined;
-  const parts = input.split('-');
-  const results: Interval[] = [];
-  for (let i = 0; i < parts.length; ++i) {
-    if (prefix === undefined) {
-      prefix = parts[i];
-    } else {
-      prefix += '-' + parts[i];
-    }
-    if (isNonComposite(prefix.trim())) {
-      if (isCent(prefix.trim())) {
-        centCount++;
-      }
-      results.push(parseLine(prefix.trim(), numberOfComponents, options));
-      prefix = undefined;
-    }
-  }
-  if (prefix?.length || !results.length) {
-    throw new Error(`Failed to parse composite part ${input}`);
-  }
-  if (results.length === 1) {
-    return [results[0], false];
-  }
-  return [
-    results[0].sub(results.slice(1).reduce((a, b) => a.add(b))),
-    results.length === 2 && centCount > 0,
-  ];
-}
-
-function parseComposite(
-  input: string,
-  numberOfComponents: number,
-  options?: IntervalOptions
-) {
-  const parts = input.split('+');
-  // Special handling for cent offsets: Use name of the primary interval
-  if (parts.length === 1) {
-    const [result, hasOffset] = parseSubtractive(
-      parts[0],
-      numberOfComponents,
-      options
-    );
-    if (hasOffset) {
-      return result;
-    }
-  }
-  if (
-    parts.length === 2 &&
-    (isCent(parts[0].trim()) || isCent(parts[1].trim()))
-  ) {
-    return parseLine(parts[0].trim(), numberOfComponents).add(
-      parseLine(parts[1].trim(), numberOfComponents)
-    );
-  }
-
-  const result = parts
-    .map(part => parseSubtractive(part, numberOfComponents, options)[0])
-    .reduce((a, b) => a.add(b));
-  result.name = input;
-  return result;
+function parseDegenerateFloat(whole: number | null, fractional: string | null) {
+  return parseFloat(`${whole ?? 0}.${fractional ?? ''}`);
 }
 
 /**
@@ -390,37 +137,130 @@ export function parseLine(
   admitBareNumbers = false,
   universalMinus = true
 ): Interval {
-  if (universalMinus && input.startsWith('-')) {
-    return parseLine(
-      input.slice(1),
-      numberOfComponents,
-      options,
-      admitBareNumbers,
-      universalMinus
-    ).neg();
+  const ast = parseAst(input);
+  if (!universalMinus && ast.type !== 'CentsLiteral') {
+    throw new Error('Univeral minus violation');
   }
-  const lineType = getLineType(input);
-  switch (lineType) {
-    case LINE_TYPE.CENTS:
-      return parseCents(input, numberOfComponents, options);
-    case LINE_TYPE.DECIMAL:
-      return parseDecimal(input, numberOfComponents, options);
-    case LINE_TYPE.N_OF_EDO:
-      return parseNOfEdo(input, numberOfComponents, options);
-    case LINE_TYPE.RATIO:
-      return parseRatio(input, numberOfComponents, options);
-    case LINE_TYPE.N_OF_EDJI:
-      return parseNOfEdji(input, numberOfComponents, options);
-    case LINE_TYPE.MONZO:
-      return parseMonzo(input, numberOfComponents, options);
-    case LINE_TYPE.COMPOSITE:
-      return parseComposite(input, numberOfComponents, options);
-    default:
-      if (admitBareNumbers && lineType === LINE_TYPE.NUMBER) {
-        return parseNumber(input, numberOfComponents, options);
+  if (
+    !admitBareNumbers &&
+    (ast.type === 'PlainLiteral' ||
+      (ast.type === 'UnaryExpression' && ast.operand.type === 'PlainLiteral'))
+  ) {
+    throw new Error('Bare numbers not allowed');
+  }
+  return evaluateAst(ast, numberOfComponents, input, options);
+}
+
+function evaluateAst(
+  ast: Expression,
+  numberOfComponents: number,
+  name?: string,
+  options?: IntervalOptions
+): Interval {
+  switch (ast.type) {
+    case 'PlainLiteral':
+      return new Interval(
+        ExtendedMonzo.fromFraction(ast.value, numberOfComponents),
+        'ratio',
+        name,
+        options
+      );
+    case 'CentsLiteral':
+      return new Interval(
+        ExtendedMonzo.fromCents(
+          parseDegenerateFloat(ast.whole, ast.fractional),
+          numberOfComponents
+        ),
+        'cents',
+        name,
+        options
+      );
+    case 'NumericLiteral':
+      return new Interval(
+        ExtendedMonzo.fromValue(
+          parseDegenerateFloat(ast.whole, ast.fractional),
+          numberOfComponents
+        ),
+        'decimal',
+        name,
+        options
+      );
+    case 'FractionLiteral':
+      return new Interval(
+        ExtendedMonzo.fromFraction(
+          new Fraction([ast.numerator, ast.denominator]),
+          numberOfComponents
+        ),
+        'ratio',
+        name,
+        options
+      );
+  }
+  if (ast.type === 'EdjiFraction') {
+    const fractionOfEquave = new Fraction([ast.numerator, ast.denominator]);
+    let equave: Fraction | undefined;
+    if (ast.equave?.type === 'PlainLiteral') {
+      equave = new Fraction(ast.equave.value);
+    } else if (ast.equave?.type === 'FractionLiteral') {
+      equave = new Fraction([ast.equave.numerator, ast.equave.denominator]);
+    }
+    if (options === undefined) {
+      options = {
+        preferredEtDenominator: ast.denominator,
+        preferredEtEquave: equave ?? new Fraction(2),
+      };
+    }
+    return new Interval(
+      ExtendedMonzo.fromEqualTemperament(
+        fractionOfEquave,
+        equave,
+        numberOfComponents
+      ),
+      'equal temperament',
+      name,
+      options
+    );
+  } else if (ast.type === 'Monzo') {
+    const components = ast.components.map(c => new Fraction(c));
+    while (components.length < numberOfComponents) {
+      components.push(new Fraction(0));
+    }
+    let residual = new Fraction(1);
+    let cents = 0;
+    while (components.length > numberOfComponents) {
+      const exponent = new Fraction(components.pop()!);
+      const factor = new Fraction(PRIMES[components.length]).pow(exponent);
+      if (factor === null) {
+        cents += exponent.valueOf() * PRIME_CENTS[components.length];
+      } else {
+        residual = residual.mul(factor);
       }
-      throw new Error(`Failed to parse ${input}`);
+    }
+    return new Interval(
+      new ExtendedMonzo(components, residual, cents),
+      'monzo',
+      name,
+      options
+    );
+  } else if (ast.type === 'UnaryExpression') {
+    const operand = evaluateAst(ast.operand, numberOfComponents, name, options);
+    operand.monzo = operand.monzo.neg();
+    return operand;
   }
+  const left = evaluateAst(ast.left, numberOfComponents, undefined, options);
+  const right = evaluateAst(ast.right, numberOfComponents, undefined, options);
+  if (ast.operator === '+') {
+    const result = left.add(right);
+    if (name !== undefined) {
+      result.name = name;
+    }
+    return result;
+  }
+  const result = left.sub(right);
+  if (name !== undefined) {
+    result.name = name;
+  }
+  return result;
 }
 
 /**
@@ -444,15 +284,11 @@ export function parseChord(
   const chord: Interval[] = [];
   input.split(separator).forEach(line => {
     // Restore commas (coalescing whitespace is fine)
-    line = line.trim().replace(/¤/g, ',');
+    line = line.trim().replace(/¤+/g, ',');
     if (!line.length) {
       return;
     }
-    if (isNumber(line)) {
-      chord.push(parseNumber(line, numberOfComponents, options));
-    } else {
-      chord.push(parseLine(line, numberOfComponents, options));
-    }
+    chord.push(parseLine(line, numberOfComponents, options, true));
   });
   return chord;
 }

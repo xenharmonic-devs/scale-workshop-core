@@ -37,6 +37,8 @@
   "scripts": {
     "lint": "gts lint",
     "clean": "gts clean",
+    "compile-parser": "peggy src/sw2.pegjs -o src/sw2-ast.js",
+    "precompile": "npm run compile-parser",
     "compile": "tsc",
     "fix": "gts fix",
     "prepare": "npm run compile",
@@ -46,6 +48,7 @@
     "doc": "typedoc --entryPointStrategy packages . --name scale-workshop-core"
   },
   "dependencies": {
+    "peggy": "^3.0.2",
     "xen-dev-utils": "^0.1.4"
   }
 }

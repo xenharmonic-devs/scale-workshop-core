@@ -449,12 +449,16 @@ export class Interval {
       equave = preferredEquave;
     } else {
       for (let power = 2; power < 10; ++power) {
-        if (equave.pow(power).equals(preferredEquave)) {
+        const candidate = equave.pow(power)!;
+        if (candidate.compare(1e6) > 0) {
+          break;
+        }
+        if (candidate.equals(preferredEquave)) {
           fractionOfEquave = fractionOfEquave.div(power);
           equave = preferredEquave;
           break;
         }
-        if (preferredEquave.pow(power).equals(equave)) {
+        if (preferredEquave.pow(power)!.equals(equave)) {
           fractionOfEquave = fractionOfEquave.mul(power);
           equave = preferredEquave;
           break;

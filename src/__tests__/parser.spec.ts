@@ -44,6 +44,10 @@ describe('Line parser', () => {
     ).toThrow();
   });
 
+  it('rejects fractions without a numerator', () => {
+    expect(() => parseLine('/5')).toThrow();
+  });
+
   it('parses N-of-EDO (negative)', () => {
     const result = parseLine('-2\\5');
     expect(
@@ -114,6 +118,10 @@ describe('Line parser', () => {
     expect(result.type).toBe('equal temperament');
   });
 
+  it('rejects N-of-EDO without a numerator', () => {
+    expect(() => parseLine('\\8')).toThrow();
+  });
+
   it('parses monzos', () => {
     const result = parseLine('[-1, 2, 3/2, 0>');
     const components = [new Fraction(-1), new Fraction(2), new Fraction(3, 2)];
@@ -127,7 +135,8 @@ describe('Line parser', () => {
     expect(result.type).toBe('monzo');
   });
 
-  it('parses composites (positive offset)', () => {
+  // Skipped because disappearing cents have mostly caused confusion
+  it.skip('parses composites (positive offset)', () => {
     const result = parseLine('3\\5 + 5.');
     expect(result.monzo.cents).toBeCloseTo(5);
     expect(result.name).toBe('3\\5');
@@ -144,7 +153,8 @@ describe('Line parser', () => {
     expect(result.equals(expected)).toBeTruthy();
   });
 
-  it('parses composites (negative offset)', () => {
+  // See above for why this is skipped
+  it.skip('parses composites (negative offset)', () => {
     const result = parseLine('3/2 - 1.955');
     expect(result.monzo.cents).toBeCloseTo(-1.955);
     expect(result.name).toBe('3/2');

@@ -106,3 +106,7 @@ dist
 # Typedoc
 
 docs/
+
+# Generated grammars
+
+src/sw2-ast.js

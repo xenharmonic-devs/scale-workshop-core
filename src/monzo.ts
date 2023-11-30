@@ -145,6 +145,9 @@ export class ExtendedMonzo {
     while (vector.length < numberOfComponents) {
       vector.push(new Fraction(0));
     }
+    if (value === 0) {
+      return new ExtendedMonzo(vector, new Fraction(0), 0);
+    }
     return new ExtendedMonzo(vector, undefined, valueToCents(value));
   }
 

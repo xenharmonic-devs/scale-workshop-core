@@ -44,6 +44,39 @@ describe('Line parser', () => {
     ).toThrow();
   });
 
+  it('does parse fractions with universal minus disabled', () => {
+    const result = parseLine_(
+      '3/2',
+      DEFAULT_NUMBER_OF_COMPONENTS,
+      undefined,
+      false,
+      false
+    );
+    expect(
+      result.equals(
+        new Interval(
+          ExtendedMonzo.fromFraction(
+            new Fraction(3, 2),
+            DEFAULT_NUMBER_OF_COMPONENTS
+          ),
+          'ratio'
+        )
+      )
+    ).toBeTruthy();
+  });
+
+  it('does parse negative cents even with minus disabled for other types', () => {
+    const result = parseLine_(
+      '-1.23',
+      DEFAULT_NUMBER_OF_COMPONENTS,
+      undefined,
+      false,
+      false
+    );
+    expect(result.type === 'cents');
+    expect(result.monzo.totalCents()).toBeCloseTo(-1.23);
+  });
+
   it('rejects fractions without a numerator', () => {
     expect(() => parseLine('/5')).toThrow();
   });

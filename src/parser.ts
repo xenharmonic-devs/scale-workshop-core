@@ -138,8 +138,10 @@ export function parseLine(
   universalMinus = true
 ): Interval {
   const ast = parseAst(input);
-  if (!universalMinus && ast.type !== 'CentsLiteral') {
-    throw new Error('Univeral minus violation');
+  if (!universalMinus && ast.type === 'UnaryExpression') {
+    if (ast.operand.type !== 'CentsLiteral') {
+      throw new Error('Univeral minus violation');
+    }
   }
   if (
     !admitBareNumbers &&

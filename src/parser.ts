@@ -190,7 +190,7 @@ function evaluateAst(
     case 'FractionLiteral':
       return new Interval(
         ExtendedMonzo.fromFraction(
-          new Fraction([ast.numerator, ast.denominator]),
+          new Fraction(ast.numerator, ast.denominator),
           numberOfComponents
         ),
         'ratio',
@@ -199,12 +199,12 @@ function evaluateAst(
       );
   }
   if (ast.type === 'EdjiFraction') {
-    const fractionOfEquave = new Fraction([ast.numerator, ast.denominator]);
+    const fractionOfEquave = new Fraction(ast.numerator, ast.denominator);
     let equave: Fraction | undefined;
     if (ast.equave?.type === 'PlainLiteral') {
       equave = new Fraction(ast.equave.value);
     } else if (ast.equave?.type === 'FractionLiteral') {
-      equave = new Fraction([ast.equave.numerator, ast.equave.denominator]);
+      equave = new Fraction(ast.equave.numerator, ast.equave.denominator);
     }
     if (options === undefined) {
       options = {

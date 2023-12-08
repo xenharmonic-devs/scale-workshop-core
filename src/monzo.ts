@@ -13,6 +13,8 @@ import {
 
 export type FractionalMonzo = Fraction[];
 
+const SAFE_CENTS = valueToCents(Number.MAX_SAFE_INTEGER);
+
 /**
  * Check if two fractional monzos are equal.
  * @param a The first monzo.
@@ -269,9 +271,23 @@ export class ExtendedMonzo {
     if (this.cents !== 0) {
       return false;
     }
+    // The Fraction class has sanity limits we must respect.
+    let numeratorCents = 0;
+    let denomimatorCents = 0;
     for (let i = 0; i < this.numberOfComponents; ++i) {
       if (this.vector[i].d !== 1) {
         return false;
+      }
+      if (this.vector[i].s > 0) {
+        numeratorCents += PRIME_CENTS[i] * this.vector[i].n;
+        if (numeratorCents > SAFE_CENTS) {
+          return false;
+        }
+      } else if (this.vector[i].s < 0) {
+        denomimatorCents += PRIME_CENTS[i] * this.vector[i].n;
+        if (denomimatorCents > SAFE_CENTS) {
+          return false;
+        }
       }
     }
     return true;

@@ -274,12 +274,14 @@ describe('Extended Monzo', () => {
     expect(tritaveJI.equals(tritaveCents)).toBeTruthy();
   });
 
-  it('throws for zero (number)', () => {
-    expect(() => ExtendedMonzo.fromFraction(0, 1)).toThrow();
+  it('accepts zero (number)', () => {
+    const monzo = ExtendedMonzo.fromFraction(0, 1);
+    expect(monzo.valueOf()).toBe(0);
   });
 
-  it('throws for zero (fraction)', () => {
-    expect(() => ExtendedMonzo.fromFraction(new Fraction(0), 1)).toThrow();
+  it('accepts zero (fraction)', () => {
+    const monzo = ExtendedMonzo.fromFraction(new Fraction(0), 1);
+    expect(monzo.valueOf()).toBe(0);
   });
 
   it('can be tested for being a power of two (residual)', () => {

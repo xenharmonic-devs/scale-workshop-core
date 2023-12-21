@@ -49,6 +49,6 @@
     "doc": "typedoc src/index.ts . --name scale-workshop-core"
   },
   "dependencies": {
-    "xen-dev-utils": "^0.2.0"
+    "xen-dev-utils": "^0.2.1"
   }
 }

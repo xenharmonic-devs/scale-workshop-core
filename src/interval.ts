@@ -515,8 +515,6 @@ export class Interval {
         if (options.forbidMonzo) {
           return cents();
         }
-      } else {
-        console.warn('Failed to represent ratio line. Falling back.');
       }
     }
 
@@ -538,10 +536,6 @@ export class Interval {
         if (options.forbidMonzo) {
           return cents();
         }
-      } else {
-        console.warn(
-          'Failed to represent equal temperament line. Falling back.'
-        );
       }
     }
 

@@ -154,7 +154,10 @@ export class Scale {
     }
     size /= numPeriods;
     down /= numPeriods;
-    if (generator.type === 'equal temperament') {
+    if (
+      generator.type === 'equal temperament' &&
+      generator.monzo.isEqualTemperament()
+    ) {
       const [genFraction, genEquave] = generator.monzo.toEqualTemperament();
       const options: IntervalOptions = {
         preferredEtDenominator: genFraction.d,

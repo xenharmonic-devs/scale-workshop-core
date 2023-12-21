@@ -547,6 +547,17 @@ describe('Scale', () => {
     expect(intervals[4].totalCents()).toBe(1200);
     expect(intervals[4].type).toBe('monzo');
   });
+
+  it('can generate rank 2 (mixing equal temperament with hard cents)', () => {
+    const fifth = new Interval(
+      new ExtendedMonzo([new Fraction('5/14')], undefined, -3),
+      'equal temperament'
+    );
+    const octave = new Interval(ExtendedMonzo.fromFraction(2, 1), 'ratio');
+    const scale = Scale.fromRank2(fifth, octave, 14, 0);
+    expect(scale.size).toBe(14);
+  });
+
   it('can generate harmonic series segment', () => {
     const scale = Scale.fromHarmonicSeries(4, 8, 4);
     expect(

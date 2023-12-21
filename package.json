@@ -1,7 +1,7 @@
 {
   "name": "scale-workshop-core",
   "author": "Lumi Pakkanen",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Core library for creating microtonal scales without the Vue front-end",
   "license": "MIT",
   "main": "dist/index",

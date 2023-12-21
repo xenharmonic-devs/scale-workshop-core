@@ -1,5 +1,5 @@
 import {ExtendedMonzo} from './monzo';
-import {fractionToString, isSafeFraction} from './utils';
+import {fractionToString} from './utils';
 import {Fraction} from 'xen-dev-utils';
 
 /** Interval formatting options. */
@@ -502,8 +502,8 @@ export class Interval {
       maybeFraction.cents = 0;
 
       if (maybeFraction.isFractional()) {
-        const fraction = maybeFraction.toFraction();
-        if (isSafeFraction(fraction)) {
+        try {
+          const fraction = maybeFraction.toFraction();
           return (
             fractionToString(
               fraction,
@@ -511,9 +511,10 @@ export class Interval {
               options.preferredDenominator
             ) + this.centsString(true)
           );
-        }
-        if (options.forbidMonzo) {
-          return cents();
+        } catch {
+          if (options.forbidMonzo) {
+            return cents();
+          }
         }
       }
     }
@@ -523,8 +524,8 @@ export class Interval {
       maybeEt.cents = 0;
 
       if (maybeEt.isEqualTemperament()) {
-        const [fractionOfEquave, equave] = maybeEt.toEqualTemperament();
-        if (isSafeFraction(fractionOfEquave) && isSafeFraction(equave)) {
+        try {
+          maybeEt.toEqualTemperament();
           const et = new Interval(
             maybeEt,
             'equal temperament',
@@ -532,9 +533,10 @@ export class Interval {
             this.options
           );
           return et.equalTemperamentString() + this.centsString(true);
-        }
-        if (options.forbidMonzo) {
-          return cents();
+        } catch {
+          if (options.forbidMonzo) {
+            return cents();
+          }
         }
       }
     }
@@ -547,22 +549,15 @@ export class Interval {
       if (options.forbidComposite) {
         return cents();
       }
-      if (isSafeFraction(this.monzo.residual)) {
-        if (this.type === 'monzo') {
-          console.warn('Failed to represent monzo. Displaying residue.');
-        }
-        return (
-          this.monzoString() +
-          ' + ' +
-          fractionToString(
-            this.monzo.residual,
-            options.preferredNumerator,
-            options.preferredDenominator
-          )
-        );
-      } else {
-        return cents();
-      }
+      return (
+        this.monzoString() +
+        ' + ' +
+        fractionToString(
+          this.monzo.residual,
+          options.preferredNumerator,
+          options.preferredDenominator
+        )
+      );
     }
     if (options.forbidComposite) {
       return cents();

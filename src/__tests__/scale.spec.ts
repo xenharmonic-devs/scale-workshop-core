@@ -558,6 +558,19 @@ describe('Scale', () => {
     expect(scale.size).toBe(14);
   });
 
+  it('can generate rank 2 (unsafe fractions)', () => {
+    const generator = new Interval(
+      ExtendedMonzo.fromFraction('11/7', 5),
+      'ratio'
+    );
+    const octave = new Interval(ExtendedMonzo.fromFraction(2, 5), 'ratio');
+    const scale = Scale.fromRank2(generator, octave, 100, 0);
+    // Expect not to raise.
+    for (let i = 0; i < 100; ++i) {
+      scale.getName(i);
+    }
+  });
+
   it('can generate harmonic series segment', () => {
     const scale = Scale.fromHarmonicSeries(4, 8, 4);
     expect(

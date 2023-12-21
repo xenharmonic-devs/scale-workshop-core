@@ -167,6 +167,7 @@ export class Scale {
       period = period.mergeOptions(options);
       if (
         period.type === 'ratio' &&
+        period.monzo.isFractional() &&
         period.monzo.toFraction().mod(genEquave).equals(0)
       ) {
         period.type = 'equal temperament';

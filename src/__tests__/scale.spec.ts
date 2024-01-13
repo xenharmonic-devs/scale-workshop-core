@@ -1077,4 +1077,21 @@ describe('Scale', () => {
     ]).approximateEqualTemperament(22);
     expect(scale.getName(0)).toBe('0\\22<1>');
   });
+
+  it('can calculate the ratio and cents gamuts of a complex scale', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromFraction('3001/3000', 7),
+        'ratio',
+        '3001/3000'
+      ),
+    ]);
+    for (let i = 0; i < 128; ++i) {
+      const idx = i - 69;
+      const ratio = scale.getRatio(idx);
+      const cents = scale.getCents(idx);
+      expect(ratio).toBeCloseTo(1.000333333333333 ** idx);
+      expect(cents).toBeCloseTo(0.5769818580538413 * idx);
+    }
+  });
 });

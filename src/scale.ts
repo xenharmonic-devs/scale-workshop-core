@@ -595,6 +595,33 @@ export class Scale {
   }
 
   /**
+   * Obtain the total cents of an interval in the scale (repeats at equaves).
+   * @param index Zero-based index of the interval.
+   * @returns Cents associated with the given index.
+   */
+  getCents(index: number) {
+    const numEquaves = Math.floor(index / this.size);
+    index -= numEquaves * this.size;
+    return (
+      this.intervals[index].totalCents() + this.equave.totalCents() * numEquaves
+    );
+  }
+
+  /**
+   * Obtain the ratio of an interval in the scale (repeats at equaves).
+   * @param index Zero-based index of the interval.
+   * @returns Ratio associated with the given index.
+   */
+  getRatio(index: number) {
+    const numEquaves = Math.floor(index / this.size);
+    index -= numEquaves * this.size;
+    return (
+      this.intervals[index].monzo.valueOf() *
+      this.equave.monzo.valueOf() ** numEquaves
+    );
+  }
+
+  /**
    * Obtain the frequency of an interval in the scale (repeats at equaves).
    * @param index Zero-based index of the interval.
    * @returns The frequency of an interval in the scale with equaves factored in as necessary.

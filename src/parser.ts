@@ -45,7 +45,7 @@ type FractionLiteral = {
 
 type EdjiFraction = {
   type: 'EdjiFraction';
-  numerator: number;
+  numerator?: number;
   denominator: number;
   equave: null | PlainLiteral | FractionLiteral;
 };
@@ -199,7 +199,7 @@ function evaluateAst(
       );
   }
   if (ast.type === 'EdjiFraction') {
-    const fractionOfEquave = new Fraction(ast.numerator, ast.denominator);
+    const fractionOfEquave = new Fraction(ast.numerator ?? 0, ast.denominator);
     let equave: Fraction | undefined;
     if (ast.equave?.type === 'PlainLiteral') {
       equave = new Fraction(ast.equave.value);

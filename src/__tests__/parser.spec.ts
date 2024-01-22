@@ -151,8 +151,21 @@ describe('Line parser', () => {
     expect(result.type).toBe('equal temperament');
   });
 
-  it('rejects N-of-EDO without a numerator', () => {
-    expect(() => parseLine('\\8')).toThrow();
+  it('accepts N-of-EDO without a numerator', () => {
+    const result = parseLine('\\8');
+    expect(
+      result.equals(
+        new Interval(
+          ExtendedMonzo.fromEqualTemperament(
+            0,
+            2,
+            DEFAULT_NUMBER_OF_COMPONENTS
+          ),
+          'equal temperament'
+        )
+      )
+    ).toBeTruthy();
+    expect(result.type).toBe('equal temperament');
   });
 
   it('parses monzos', () => {

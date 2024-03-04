@@ -13,6 +13,11 @@ describe('Scale Workshop 2 Abstract Syntax Tree Parser', () => {
     expect(ast.type).toBe('CentsLiteral');
     expect(ast.whole).toBe(81);
     expect(ast.fractional).toBe('80');
+    expect(ast.location).toEqual({
+      source: undefined,
+      start: {offset: 0, line: 1, column: 1},
+      end: {offset: 5, line: 1, column: 6},
+    });
   });
 
   it('parses comma-separated numbers as numeric literals', () => {
@@ -86,6 +91,34 @@ describe('Scale Workshop 2 Abstract Syntax Tree Parser', () => {
     const ast = parse('2 + 1.23');
     expect(ast.type).toBe('BinaryExpression');
     expect(ast.operator).toBe('+');
+    expect(ast).toEqual({
+      type: 'BinaryExpression',
+      operator: '+',
+      left: {
+        type: 'PlainLiteral',
+        value: 2,
+        location: {
+          source: undefined,
+          start: {offset: 0, line: 1, column: 1},
+          end: {offset: 1, line: 1, column: 2},
+        },
+      },
+      right: {
+        type: 'CentsLiteral',
+        whole: 1,
+        fractional: '23',
+        location: {
+          source: undefined,
+          start: {offset: 4, line: 1, column: 5},
+          end: {offset: 8, line: 1, column: 9},
+        },
+      },
+      location: {
+        source: undefined,
+        start: {offset: 0, line: 1, column: 1},
+        end: {offset: 8, line: 1, column: 9},
+      },
+    });
   });
 
   it('parses binary subtracted numbers and cents', () => {

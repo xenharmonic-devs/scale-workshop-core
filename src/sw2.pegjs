@@ -1,73 +1,81 @@
 {{
-  function PlainLiteral(value) {
+  function PlainLiteral(value, location) {
     return {
       type: 'PlainLiteral',
-      value
-    }
+      value,
+      location,
+    };
   }
 
-  function CentsLiteral(whole, fractional) {
+  function CentsLiteral(whole, fractional, location) {
     return {
       type: 'CentsLiteral',
       whole,
-      fractional
-    }
+      fractional,
+      location,
+    };
   }
 
-  function NumericLiteral(whole, fractional) {
+  function NumericLiteral(whole, fractional, location) {
     return {
       type: 'NumericLiteral',
       whole,
-      fractional
-    }
+      fractional,
+      location,
+    };
   }
 
-  function FractionLiteral(numerator, denominator) {
+  function FractionLiteral(numerator, denominator, location) {
     return  {
       type: 'FractionLiteral',
       numerator,
-      denominator
-    }
+      denominator,
+      location,
+    };
   }
 
-  function EdjiFraction(numerator, denominator, equave) {
+  function EdjiFraction(numerator, denominator, equave, location) {
     return {
       type: 'EdjiFraction',
       numerator,
       denominator,
-      equave
-    }
+      equave,
+      location,
+    };
   }
 
-  function Monzo(components) {
+  function Monzo(components, location) {
     return {
       type: 'Monzo',
-      components
+      components,
+      location,
     }
   }
 
-  function BinaryExpression(operator, left, right) {
+  function BinaryExpression(operator, left, right, location) {
     return {
       type: 'BinaryExpression',
       operator,
       left,
-      right
-    }
+      right,
+      location,
+    };
   }
 
-  function UnaryExpression(operator, operand) {
+  function UnaryExpression(operator, operand, location) {
     return {
       type: 'UnaryExpression',
       operator,
-      operand
+      operand,
+      location,
     }
   }
 
-  function operatorReducer (result, element) {
+  function operatorReducer (result, element, location) {
     const left = result;
     const [op, right] = element;
 
-    return BinaryExpression(op, left, right);
+    return BinaryExpression(op, left, right, location);
   }
 }}
 
@@ -97,7 +105,8 @@ _ = Whitespace*
 
 Expression
   = head:Term tail:(_ @('+' / '-') _ @Term)* {
-      return tail.reduce(operatorReducer, head);
+      const loc = location();
+      return tail.reduce((result, element) => operatorReducer(result, element, loc), head);
     }
 
 Term
@@ -117,28 +126,30 @@ SignedInteger
   = sign:'-'? value:Integer { return sign ? -value : value }
 
 DotDecimal
-  = whole:Integer? '.' fractional:$[0-9]* { return CentsLiteral(whole, fractional) }
+  = whole:Integer? '.' fractional:$[0-9]* { return CentsLiteral(whole, fractional, location()) }
 
 CommaDecimal
-  = whole:Integer? ',' fractional:$[0-9]* { return NumericLiteral(whole, fractional) }
+  = whole:Integer? ',' fractional:$[0-9]* { return NumericLiteral(whole, fractional, location()) }
 
 SlashFraction
-  = numerator:Integer '/' denominator:Integer { return FractionLiteral(numerator, denominator) }
+  = numerator:Integer '/' denominator:Integer { return FractionLiteral(numerator, denominator, location()) }
 
 PlainNumber
-  = value:Integer { return PlainLiteral(value) }
+  = value:Integer { return PlainLiteral(value, location()) }
 
 EquaveExpression
   = '<' _ @(SlashFraction / PlainNumber) _ '>'
 
 BackslashFraction
-  = numerator:Integer? '\\' denominator:SignedInteger equave:EquaveExpression? { return EdjiFraction(numerator, denominator, equave) }
+  = numerator:Integer? '\\' denominator:SignedInteger equave:EquaveExpression? {
+    return EdjiFraction(numerator, denominator, equave, location());
+  }
 
 Component
   = $([+-]? (SlashFraction / PlainNumber))
 
 Monzo
-  = '[' components:Component|.., _ ','? _| '>' { return Monzo(components) }
+  = '[' components:Component|.., _ ','? _| '>' { return Monzo(components, location()) }
 
 UnaryExpression
-  = operator:'-' operand:Primary { return UnaryExpression(operator, operand) }
+  = operator:'-' operand:Primary { return UnaryExpression(operator, operand, location()) }

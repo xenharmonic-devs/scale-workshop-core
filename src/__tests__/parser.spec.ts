@@ -4,6 +4,7 @@ import {
   enumerateChord,
   parseChord,
   parseLine as parseLine_,
+  parsePartialAst,
   parseScale,
   reverseParseScale,
 } from '../parser';
@@ -460,5 +461,77 @@ describe('Reverse parser', () => {
     ]);
     const lines = reverseParseScale(scale);
     expect(arraysEqual(lines, ['13/12', '2/1'])).toBeTruthy();
+  });
+});
+
+describe('Scale Workshop 2 partial AST parser', () => {
+  it('has enough information to highlight parts of a binary operation', () => {
+    const partialAST = parsePartialAst('3\\5   +1\\7');
+    expect(partialAST).toEqual({
+      type: 'BinaryExpression',
+      operator: '+',
+      left: {
+        type: 'EdjiFraction',
+        numerator: 3,
+        denominator: 5,
+        equave: null,
+        location: {
+          source: undefined,
+          start: {offset: 0, line: 1, column: 1},
+          end: {offset: 3, line: 1, column: 4},
+        },
+      },
+      right: {
+        type: 'EdjiFraction',
+        numerator: 1,
+        denominator: 7,
+        equave: null,
+        location: {
+          source: undefined,
+          start: {offset: 7, line: 1, column: 8},
+          end: {offset: 10, line: 1, column: 11},
+        },
+      },
+      location: {
+        source: undefined,
+        start: {offset: 0, line: 1, column: 1},
+        end: {offset: 10, line: 1, column: 11},
+      },
+    });
+  });
+
+  it('can recover from errors', () => {
+    const partialAST = parsePartialAst('3\\5 + 1\\7 * asdf');
+    expect(partialAST).toEqual({
+      type: 'BinaryExpression',
+      operator: '+',
+      left: {
+        type: 'EdjiFraction',
+        numerator: 3,
+        denominator: 5,
+        equave: null,
+        location: {
+          source: undefined,
+          start: {offset: 0, line: 1, column: 1},
+          end: {offset: 3, line: 1, column: 4},
+        },
+      },
+      right: {
+        type: 'EdjiFraction',
+        numerator: 1,
+        denominator: 7,
+        equave: null,
+        location: {
+          source: undefined,
+          start: {offset: 6, line: 1, column: 7},
+          end: {offset: 9, line: 1, column: 10},
+        },
+      },
+      location: {
+        source: undefined,
+        start: {offset: 0, line: 1, column: 1},
+        end: {offset: 10, line: 1, column: 11},
+      },
+    });
   });
 });

@@ -846,7 +846,9 @@ export class Scale {
    * @returns A new scale with variance added.
    */
   vary(maxCents: number, varyEquave = false) {
-    const intervals = this.intervals.map(interval => interval.vary(maxCents));
+    const intervals = this.intervals.map((interval, i) =>
+      i ? interval.vary(maxCents) : interval.clone()
+    );
     const result = this.variant(intervals);
     if (varyEquave) {
       result.equave = this.equave.vary(maxCents);

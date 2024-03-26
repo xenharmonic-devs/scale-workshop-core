@@ -3,7 +3,7 @@ import {describe, it, expect} from 'vitest';
 import {ExtendedMonzo} from '../monzo';
 import {Scale} from '../scale';
 import {Interval, IntervalOptions} from '../interval';
-import {arraysEqual, Fraction} from 'xen-dev-utils';
+import {arraysEqual, Fraction, valueToCents} from 'xen-dev-utils';
 
 describe('Scale', () => {
   it('supports just intonation', () => {
@@ -1052,6 +1052,30 @@ describe('Scale', () => {
     expect(scale.getName(2)).toBe('9/1');
     expect(scale.getMonzo(1).cents).toBeTruthy();
     expect(scale.getMonzo(2).cents).toBeTruthy();
+  });
+
+  it('keeps the unison in place during random variance', () => {
+    const scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(
+          new Fraction(3, 15),
+          new Fraction(9),
+          2
+        ),
+        'equal temperament',
+        undefined,
+        {preferredEtDenominator: 15, preferredEtEquave: new Fraction(9)}
+      ),
+      new Interval(ExtendedMonzo.fromFraction(9, 2), 'ratio'),
+    ]).vary(10, false);
+    expect(scale.intervals[0].totalCents()).toBe(0);
+    expect(scale.getCents(1)).toBeGreaterThanOrEqual(
+      (valueToCents(9) * 3) / 15 - 10
+    );
+    expect(scale.getCents(1)).toBeLessThanOrEqual(
+      (valueToCents(9) * 3) / 15 + 10
+    );
+    expect(scale.getCents(2)).toBeCloseTo(valueToCents(9));
   });
 
   it('respells the equave when approximated in equal temperament', () => {

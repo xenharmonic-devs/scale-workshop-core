@@ -28,11 +28,11 @@
   ],
   "types": "dist/index.d.ts",
   "devDependencies": {
-    "@types/node": "^20.11.24",
-    "gts": "^5.2.0",
+    "@types/node": "^20.11.30",
+    "gts": "^5.3.0",
     "peggy": "^4.0.2",
-    "typedoc": "^0.25.9",
-    "typescript": "^5.3.3",
+    "typedoc": "^0.25.12",
+    "typescript": "^5.4.3",
     "vitest": "^0.34.6"
   },
   "scripts": {
@@ -49,6 +49,6 @@
     "doc": "typedoc src/index.ts . --name scale-workshop-core"
   },
   "dependencies": {
-    "xen-dev-utils": "^0.2.7"
+    "xen-dev-utils": "^0.2.8"
   }
 }

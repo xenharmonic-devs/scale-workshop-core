@@ -670,10 +670,27 @@ export class Scale {
 
   /**
    * Sort the scale in-place.
+   * @param preserveUnity Keep the first entry in place and verify that it's 0 cents.
    * @returns The scale with intervals sorted from smallest to largest without touching the equave.
    */
-  sortInPlace() {
+  sortInPlace(preserveUnity = true) {
+    let unity: Interval | undefined;
+    if (preserveUnity) {
+      unity = this.intervals.shift();
+      if (!unity) {
+        // Seems like an empty scale.
+        return this;
+      }
+      if (unity.totalCents()) {
+        throw new Error(
+          'Unrooted scales cannot be sorted while preserving unity.'
+        );
+      }
+    }
     this.intervals.sort((a, b) => a.compare(b));
+    if (unity) {
+      this.intervals.unshift(unity);
+    }
     return this;
   }
 
@@ -689,16 +706,33 @@ export class Scale {
   /**
    * Construct a sorted copy of the scale. scale in-place.
    * @param deep Create new copies of the intervals instead just a new array with the old instances.
+   * @param preserveUnity Keep the first entry in place and verify that it's 0 cents.
    * @returns The scale with intervals sorted from smallest to largest without touching the equave.
    */
-  sorted(deep = false) {
+  sorted(deep = false, preserveUnity = true) {
     let intervals: Interval[];
     if (deep) {
       intervals = this.intervals.map(interval => interval.clone());
     } else {
       intervals = [...this.intervals];
     }
+    let unity: Interval | undefined;
+    if (preserveUnity) {
+      unity = intervals.shift();
+      if (!unity) {
+        // Seems like an empty scale.
+        return this.variant(intervals);
+      }
+      if (unity.totalCents()) {
+        throw new Error(
+          'Unrooted scales cannot be sorted while preserving unity.'
+        );
+      }
+    }
     intervals.sort((a, b) => a.compare(b));
+    if (unity) {
+      intervals.unshift(unity);
+    }
     return this.variant(intervals);
   }
 
@@ -939,7 +973,7 @@ export class Scale {
    * @returns A new scale with intervals from both without duplicates.
    */
   merge(other: Scale) {
-    return this.concat(other).removeDuplicatesInPlace().sortInPlace();
+    return this.concat(other).removeDuplicatesInPlace().sortInPlace(false);
   }
 
   /**

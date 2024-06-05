@@ -95,6 +95,19 @@ describe('Scale', () => {
     expect(scale.getFrequency(3)).toBeCloseTo(1875);
     expect(scale.getFrequency(4)).toBeCloseTo(2000);
   });
+  it('can be sorted (subunity lines)', () => {
+    const intervals = [
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2, 3), 3), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(3, 2), 3), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(5, 3), 3), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(2, 1), 3), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(5, 2), 3), 'ratio'),
+      new Interval(ExtendedMonzo.fromFraction(new Fraction(9, 5), 3), 'ratio'),
+    ];
+    const baseFrequency = 1000;
+    const scale = Scale.fromIntervalArray(intervals, baseFrequency).sorted();
+    expect(scale.getFrequency(0)).toBeCloseTo(baseFrequency);
+  });
   it('can be octave reduced', () => {
     const intervals = [
       new Interval(ExtendedMonzo.fromFraction(new Fraction(3, 5), 3), 'ratio'),

@@ -531,6 +531,20 @@ describe('Scale', () => {
 
     expect(scale.getMonzo(5).strictEquals(octave.monzo)).toBeTruthy();
   });
+  it('can generate rank 2 (down)', () => {
+    const fifth = new Interval(
+      ExtendedMonzo.fromFraction(new Fraction(3, 2), 2),
+      'ratio'
+    );
+    const octave = new Interval(
+      ExtendedMonzo.fromFraction(new Fraction(2), 3),
+      'ratio'
+    );
+    const scale = Scale.fromRank2(fifth, octave, 7, 1, 1);
+    expect([...Array(8).keys()].map(i => scale.getCents(i).toFixed(1))).toEqual(
+      ['0.0', '203.9', '407.8', '498.0', '702.0', '905.9', '1109.8', '1200.0']
+    );
+  });
   it('can generate rank 2 (multiple periods per equave)', () => {
     const fifth = new Interval(
       ExtendedMonzo.fromFraction(new Fraction(3, 2), 2),

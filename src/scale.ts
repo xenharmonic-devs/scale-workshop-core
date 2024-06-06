@@ -178,7 +178,7 @@ export class Scale {
       intervals.push(generator.mul(i - down).mmod(period));
     }
     const result = new Scale(intervals, period, baseFrequency);
-    result.sortInPlace();
+    result.sortInPlace(false);
     return result.repeat(numPeriods);
   }
 

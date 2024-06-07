@@ -885,6 +885,34 @@ describe('Scale', () => {
     expect(lines).toBe('1 9/8 5/4 4/3 3/2 5/3 15/8 2');
   });
 
+  it('can merge similar offsets without duplicates', () => {
+    let scale = Scale.fromIntervalArray([
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(7, 12)),
+        'equal temperament'
+      ),
+      new Interval(
+        ExtendedMonzo.fromEqualTemperament(new Fraction(12, 12)),
+        'equal temperament'
+      ),
+    ]);
+    scale = scale.merge(
+      scale.transpose(
+        new Interval(
+          ExtendedMonzo.fromEqualTemperament(new Fraction(1, 12)),
+          'equal temperament'
+        )
+      )
+    );
+    scale = scale.merge(
+      scale.transpose(new Interval(ExtendedMonzo.fromCents(100, 1), 'cents'))
+    );
+    expect(scale.size).toBe(6);
+    expect([...Array(7).keys()].map(i => scale.getCents(i).toFixed(1))).toEqual(
+      ['0.0', '100.0', '200.0', '700.0', '800.0', '900.0', '1200.0']
+    );
+  });
+
   it('can be reverse parsed', () => {
     const scale = Scale.fromIntervalArray([
       new Interval(

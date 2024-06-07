@@ -956,7 +956,7 @@ export class Scale {
     let i = 1;
     while (i < this.intervals.length) {
       for (let j = 0; j < i; ++j) {
-        if (this.intervals[i].strictEquals(this.intervals[j])) {
+        if (this.intervals[i].equals(this.intervals[j])) {
           this.intervals.splice(i, 1);
           i--;
           break;

@@ -755,7 +755,7 @@ export class Scale {
     const unison = this.equave.zeroed();
     const intervals = this.intervals.filter(
       interval =>
-        interval.compare(unison) >= 0 && interval.compare(this.equave) <= 0
+        interval.compare(unison) >= 0 && interval.compare(this.equave) < 0
     );
     return this.variant(intervals);
   }

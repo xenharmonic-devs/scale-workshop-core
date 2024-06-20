@@ -4,6 +4,27 @@ import {Fraction, PRIMES, PRIME_CENTS} from 'xen-dev-utils';
 import {Scale} from './scale';
 import {parse} from './sw2-ast';
 
+/** Provides information pointing to a location within a source. */
+export interface Location {
+  /** Line in the parsed source (1-based). */
+  line: number;
+  /** Column in the parsed source (1-based). */
+  column: number;
+  /** Offset in the parsed source (0-based). */
+  offset: number;
+}
+
+/** The `start` and `end` position's of an object within the source. */
+export interface LocationRange {
+  /** Any object that was supplied to the `parse()` call as the `grammarSource` option. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  source: any;
+  /** Position at the beginning of the expression. */
+  start: Location;
+  /** Position after the end of the expression. */
+  end: Location;
+}
+
 /**
  * The types of intervals strings can represent.
  */
@@ -19,54 +40,58 @@ export enum LINE_TYPE {
   INVALID = 'invalid',
 }
 
-// Abstract Syntax Tree hierarchy
-type PlainLiteral = {
-  type: 'PlainLiteral';
-  value: number;
+type Node = {
+  location: LocationRange;
 };
 
-type CentsLiteral = {
+// Abstract Syntax Tree hierarchy
+interface PlainLiteral extends Node {
+  type: 'PlainLiteral';
+  value: number;
+}
+
+interface CentsLiteral extends Node {
   type: 'CentsLiteral';
   whole: number | null;
   fractional: string | null;
-};
+}
 
-type NumericLiteral = {
+interface NumericLiteral extends Node {
   type: 'NumericLiteral';
   whole: number | null;
   fractional: string | null;
-};
+}
 
-type FractionLiteral = {
+interface FractionLiteral extends Node {
   type: 'FractionLiteral';
   numerator: number;
   denominator: number;
-};
+}
 
-type EdjiFraction = {
+interface EdjiFraction extends Node {
   type: 'EdjiFraction';
   numerator?: number;
   denominator: number;
   equave: null | PlainLiteral | FractionLiteral;
-};
+}
 
-type Monzo = {
+interface Monzo extends Node {
   type: 'Monzo';
   components: string[];
-};
+}
 
-type UnaryExpression = {
+interface UnaryExpression extends Node {
   type: 'UnaryExpression';
   operator: '-';
   operand: Expression;
-};
+}
 
-type BinaryExpression = {
+interface BinaryExpression extends Node {
   type: 'BinaryExpression';
   operator: '+' | '-';
   left: Expression;
   right: Expression;
-};
+}
 
 type Expression =
   | PlainLiteral
@@ -80,6 +105,10 @@ type Expression =
 
 function parseAst(input: string): Expression {
   return parse(input);
+}
+
+export function parsePartialAst(input: string): Expression {
+  return parse(input, {peg$library: true}).peg$result;
 }
 
 /**
